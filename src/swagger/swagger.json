@@ -1,0 +1,714 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Competition Management API",
+        "version": "1.0.0",
+        "description": "API documentation for Competition Management System."
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000",
+            "description": "Development server"
+        },
+        {
+            "url": "https://node-test-fu37.onrender.com",
+            "description": "Deployment server"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "Enter 'Bearer' followed by a space and the token. Example: 'Bearer abc123'"
+        }
+    },
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "paths": {
+        "/api/auth/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new user",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "role"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "minLength": 6
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "admin",
+                                            "customer"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully"
+                    },
+                    "400": {
+                        "description": "Validation error or email already exists"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login a user",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User logged in successfully"
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Invalid credentials"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/api/auth/profile": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get user profile",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User profile fetched successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/api/competitions": {
+            "get": {
+                "tags": [
+                    "Competitions"
+                ],
+                "summary": "Get all competitions",
+                "description": "Retrieve a list of all competitions including the count of regions.",
+                "responses": {
+                    "200": {
+                        "description": "A list of competitions.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Competition"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/competitions/new": {
+            "post": {
+                "tags": [
+                    "Competitions"
+                ],
+                "summary": "Create a new competition",
+                "description": "Add a new competition to the database.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "parameters": [
+                    {
+                        "in": "formData",
+                        "name": "pdf",
+                        "type": "file",
+                        "description": "Rules document as a PDF."
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateCompetition"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Competition created successfully."
+                    },
+                    "400": {
+                        "description": "Validation errors."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/competitions/{id}": {
+            "put": {
+                "tags": [
+                    "Competitions"
+                ],
+                "summary": "Update a competition",
+                "description": "Update details of an existing competition.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "type": "integer",
+                        "description": "ID of the competition to update."
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateCompetition"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Competition updated successfully."
+                    },
+                    "400": {
+                        "description": "Validation errors."
+                    },
+                    "403": {
+                        "description": "Access denied. Admin rights required."
+                    },
+                    "404": {
+                        "description": "Competition not found."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Competitions"
+                ],
+                "summary": "Delete a competition",
+                "description": "Delete a competition by its ID.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "type": "integer",
+                        "description": "ID of the competition to delete."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Competition deleted successfully."
+                    },
+                    "403": {
+                        "description": "Access denied. Admin rights required."
+                    },
+                    "404": {
+                        "description": "Competition not found."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/competitions/register": {
+            "post": {
+                "tags": [
+                    "Competitions"
+                ],
+                "summary": "Register for a competition",
+                "description": "Register a team for a competition.",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "required": [
+                                "competition_id",
+                                "team_name",
+                                "leader_name",
+                                "leader_email"
+                            ],
+                            "properties": {
+                                "competition_id": {
+                                    "type": "integer"
+                                },
+                                "team_name": {
+                                    "type": "string"
+                                },
+                                "leader_name": {
+                                    "type": "string"
+                                },
+                                "leader_email": {
+                                    "type": "string",
+                                    "format": "email"
+                                },
+                                "member_names": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Registration successful."
+                    },
+                    "400": {
+                        "description": "Validation errors or team name already exists."
+                    },
+                    "404": {
+                        "description": "Competition not found or registration deadline passed."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/competitions/send-certificates": {
+            "post": {
+                "tags": [
+                    "Competitions"
+                ],
+                "summary": "Send bulk certificates",
+                "description": "Generate and send certificates for participants in bulk.",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SendBulkCertificates"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Certificates generation and sending completed."
+                    },
+                    "400": {
+                        "description": "Validation errors."
+                    },
+                    "404": {
+                        "description": "Competition not found."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/competitions/sent-team-certificates": {
+            "post": {
+                "tags": [
+                    "Competitions"
+                ],
+                "summary": "Send team certificates",
+                "description": "Generate and send certificates for all team members.",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SendTeamCertificates"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Certificates sent successfully."
+                    },
+                    "400": {
+                        "description": "Validation errors."
+                    },
+                    "404": {
+                        "description": "Team not found."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/admin/registrations": {
+            "get": {
+                "summary": "Get all registrations",
+                "description": "Admin can fetch all registrations.",
+                "tags": [
+                    "Admin"
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of registrations.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer"
+                                    },
+                                    "user_name": {
+                                        "type": "string"
+                                    },
+                                    "competition_name": {
+                                        "type": "string"
+                                    },
+                                    "region_name": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/admin/certificates": {
+            "post": {
+                "summary": "Generate a certificate",
+                "description": "Admin can generate a certificate for a participant.",
+                "tags": [
+                    "Admin"
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "registration_id": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "registration_id"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Certificate generated successfully."
+                    },
+                    "400": {
+                        "description": "Validation errors."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/admin/event-pass": {
+            "post": {
+                "summary": "Generate an event pass",
+                "description": "Admin can generate an event pass for a participant.",
+                "tags": [
+                    "Admin"
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "registration_id": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "registration_id"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Event pass generated successfully."
+                    },
+                    "400": {
+                        "description": "Validation errors."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "Competition": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "venue": {
+                    "type": "string"
+                },
+                "registration_deadline": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "maximum_teams": {
+                    "type": "integer"
+                },
+                "fees": {
+                    "type": "number",
+                    "format": "float"
+                },
+                "rules": {
+                    "type": "string"
+                },
+                "pdf_url": {
+                    "type": "string"
+                },
+                "regions_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "CreateCompetition": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "venue": {
+                    "type": "string"
+                },
+                "registration_deadline": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "maximum_teams": {
+                    "type": "integer"
+                },
+                "fees": {
+                    "type": "number",
+                    "format": "float"
+                },
+                "rules": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "pdf_url": {
+                        "type": "string"
+                    }
+                }
+            },
+            "UpdateCompetition": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "level": {
+                        "type": "string"
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "venue": {
+                        "type": "string"
+                    },
+                    "registration_deadline": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "maximum_teams": {
+                        "type": "integer"
+                    },
+                    "fees": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "rules": {
+                        "type": "string"
+                    }
+                }
+            },
+            "SendBulkCertificates": {
+                "type": "object",
+                "required": [
+                    "competitionId",
+                    "participants"
+                ],
+                "properties": {
+                    "competitionId": {
+                        "type": "integer"
+                    },
+                    "participants": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "email": {
+                                    "type": "string",
+                                    "format": "email"
+                                },
+                                "position": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "SendTeamCertificates": {
+                "type": "object",
+                "required": [
+                    "team_code"
+                ],
+                "properties": {
+                    "team_code": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
