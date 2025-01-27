@@ -13,21 +13,66 @@ class EventPassGenerator {
 
     const doc = new PDFDocument({
       size: 'A6',
+      margin: 0
     });
 
     const filePath = path.join(__dirname, `../public/passes/${data.id}.pdf`);
     doc.pipe(fs.createWriteStream(filePath));
 
-    // Add event pass content
-    doc.fontSize(16)
-       .text('EVENT PASS', { align: 'center' });
+    // Colors
+    const lightBlue = '#E3F2FD';
+    const darkBlue = '#1E88E5';
+    const lightOrange = '#FFE0B2';
+    const darkOrange = '#FB8C00';
+
+    // Header background
+    doc.rect(0, 0, 297.64, 80)
+       .fill(lightBlue);
+
+    // Event name header
+    doc.fontSize(24)
+       .fillColor(darkBlue)
+       .text('EVENT PASS', 0, 30, {
+         align: 'center',
+         width: 297.64
+       });
+
+    // Main content section
+    doc.rect(20, 100, 257.64, 120)
+       .fill(lightOrange);
+
+    // Participant information
+    doc.fillColor('#000000')
+       .fontSize(14)
+       .text('PARTICIPANT DETAILS', 40, 110);
 
     doc.fontSize(12)
-       .text(`Name: ${data.name}`, 50, 100)
-       .text(`Event: ${data.competition_name}`, 50, 120)
-       .text(`ID: ${data.participant_id}`, 50, 140);
+       .text(`Name: ${data.name}`, 40, 135)
+       .text(`Event: ${data.competition_name}`, 40, 155)
+       .text(`ID: ${data.participant_id}`, 40, 175);
 
-    doc.image(qrCodeData, 50, 170, { width: 100 });
+    // QR Code section
+    doc.rect(20, 240, 257.64, 150)
+       .fill(lightBlue);
+
+    // QR Code
+    doc.image(qrCodeData, 98.82, 260, { width: 100 });
+
+    // Scan instructions
+    doc.fontSize(10)
+       .fillColor(darkBlue)
+       .text('Scan QR code for verification', 0, 370, {
+         align: 'center',
+         width: 297.64
+       });
+
+    // Footer
+    doc.fontSize(8)
+       .fillColor('#666666')
+       .text('This pass must be presented at the event entrance', 0, 400, {
+         align: 'center',
+         width: 297.64
+       });
 
     doc.end();
     return `/passes/${data.id}.pdf`;
