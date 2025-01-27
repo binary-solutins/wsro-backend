@@ -8,9 +8,9 @@ class EventPassGenerator {
     const qrCodeData = await QRCode.toDataURL(JSON.stringify({
       id: data.id,
       participant_id: data.participant_id,
+      name: data.name,
       event: data.competition_name,
-      teamCode: data.teamCode,
-      teamName: data.teamName
+      role: data.role
     }));
 
     const doc = new PDFDocument({
@@ -18,7 +18,13 @@ class EventPassGenerator {
       margin: 0
     });
 
-    const filePath = path.join(__dirname, `../public/passes/${data.id}.pdf`);
+    // Ensure the passes directory exists
+    const passesDir = path.join(__dirname, '../public/passes');
+    if (!fs.existsSync(passesDir)) {
+      fs.mkdirSync(passesDir, { recursive: true });
+    }
+
+    const filePath = path.join(passesDir, `${data.id}.pdf`);
     doc.pipe(fs.createWriteStream(filePath));
 
     // Colors
@@ -34,44 +40,54 @@ class EventPassGenerator {
     // Event name header
     doc.fontSize(24)
        .fillColor(darkBlue)
-       .text(data.competition_name, 0, 20, {
-         align: 'center',
-         width: 297.64
-       });
-    
-    doc.fontSize(16)
-       .fillColor(darkOrange)
-       .text('EVENT PASS', 0, 50, {
+       .text('EVENT PASS', 0, 20, {
          align: 'center',
          width: 297.64
        });
 
-    // Main content section
-    doc.rect(20, 100, 257.64, 160)
+    doc.fontSize(16)
+       .fillColor(darkOrange)
+       .text(data.competition_name, 0, 50, {
+         align: 'center',
+         width: 297.64
+       });
+
+    // Role badge
+    doc.rect(20, 90, 257.64, 30)
+       .fill(darkOrange);
+    
+    doc.fontSize(14)
+       .fillColor('#FFFFFF')
+       .text(data.role, 0, 98, {
+         align: 'center',
+         width: 297.64
+       });
+
+    // Participant information section
+    doc.rect(20, 130, 257.64, 100)
        .fill(lightOrange);
 
     // Participant information
     doc.fillColor('#000000')
+       .fontSize(12)
+       .text('Name:', 40, 140)
        .fontSize(14)
-       .text('TEAM & PARTICIPANT DETAILS', 40, 110);
-
-    doc.fontSize(12)
-       .text(`Name: ${data.name}`, 40, 135)
-       .text(`Team Name: ${data.teamName}`, 40, 155)
-       .text(`Team Code: ${data.teamCode}`, 40, 175)
-       .text(`ID: ${data.participant_id}`, 40, 195);
+       .text(data.name, 40, 160, { width: 217.64 })
+       .fontSize(12)
+       .text('ID:', 40, 185)
+       .text(data.participant_id, 40, 205);
 
     // QR Code section
-    doc.rect(20, 280, 257.64, 150)
+    doc.rect(20, 240, 257.64, 150)
        .fill(lightBlue);
 
     // QR Code
-    doc.image(qrCodeData, 98.82, 290, { width: 100 });
+    doc.image(qrCodeData, 98.82, 250, { width: 100 });
 
     // Scan instructions
     doc.fontSize(10)
        .fillColor(darkBlue)
-       .text('Scan QR code for verification', 0, 400, {
+       .text('Scan for verification', 0, 360, {
          align: 'center',
          width: 297.64
        });
@@ -79,13 +95,13 @@ class EventPassGenerator {
     // Footer
     doc.fontSize(8)
        .fillColor('#666666')
-       .text('This pass must be presented at the event entrance', 0, 420, {
+       .text('Present this pass at the event entrance', 0, 390, {
          align: 'center',
          width: 297.64
        });
 
     doc.end();
-    return filePath;
+    return `/passes/${data.id}.pdf`;
   }
 }
 
