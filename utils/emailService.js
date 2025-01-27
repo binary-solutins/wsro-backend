@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const EventPassGenerator = require('../src/services/eventPassGenerator');
 
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,

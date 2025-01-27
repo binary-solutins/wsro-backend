@@ -100,3 +100,5 @@ class EventPassGenerator {
     });
   }
 }
+
+module.exports = EventPassGenerator;
