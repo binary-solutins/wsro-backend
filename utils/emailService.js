@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const QRCode = require('qrcode');
 const path = require('path');
+const EventPassGenerator = require('../src/services/eventPassGenerator');
 const fs = require('fs').promises;
 
 const transporter = nodemailer.createTransport({
@@ -86,6 +87,17 @@ const sendRegistrationEmail = async (
   };
 
   try {
+    // Generate badge for team leader
+    const badgeData = {
+      id: `${teamCode}-${members[0].name.replace(/\s+/g, '-')}`.toLowerCase(),
+      participant_id: `P-${teamCode}-1`,
+      competition_name: competitionName,
+      name: members[0].name,
+      teamName: teamName,
+      teamCode: teamCode
+    };
+
+    const badgePath = await EventPassGenerator.generateEventPass(badgeData);
     const qrCodeDataURL = await QRCode.toDataURL(JSON.stringify(teamData));
 
     const mailOptions = {
@@ -130,18 +142,12 @@ const sendRegistrationEmail = async (
                 </table>
               </div>
 
-              <!-- QR Code Section -->
-              <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #E3F2FD; border-radius: 8px;">
-                <h3 style="color: #1E88E5; margin-bottom: 15px;">Team QR Code</h3>
-                <img src="${qrCodeDataURL}" alt="Team QR Code" style="max-width: 200px; margin-bottom: 15px;">
-                <p style="color: #666; font-size: 14px; margin: 0;">Keep this QR code for quick access to your team details</p>
-              </div>
-
               <!-- Important Information -->
               <div style="background-color: #fff; border: 2px solid #E3F2FD; padding: 20px; border-radius: 8px;">
                 <h3 style="color: #1E88E5; margin-top: 0;">Next Steps:</h3>
                 <ul style="padding-left: 20px; margin-bottom: 0;">
                   <li style="margin-bottom: 10px;">Save your team code: <strong>${teamCode}</strong></li>
+                  <li style="margin-bottom: 10px;">Download and save your event badge from the attachments</li>
                   <li style="margin-bottom: 10px;">Share team details with all members</li>
                   <li style="margin-bottom: 10px;">Check your email for updates</li>
                 </ul>
@@ -163,18 +169,18 @@ const sendRegistrationEmail = async (
       `,
       attachments: [
         {
-          filename: 'team-details-qr.png',
-          content: qrCodeDataURL.split(',')[1],
-          encoding: 'base64',
-        },
+          filename: `${teamName}-EventBadge.pdf`,
+          path: badgePath,
+          contentType: 'application/pdf'
+        }
       ],
     };
 
     await transporter.sendMail(mailOptions);
-    console.log('Registration email with QR code sent successfully.');
+    console.log('Registration email with event badge sent successfully.');
   } catch (error) {
-    console.error('Failed to send registration email with QR code:', error);
-    throw new Error('Failed to send registration email with QR code.');
+    console.error('Failed to send registration email:', error);
+    throw new Error('Failed to send registration email.');
   }
 };
 
