@@ -1,7 +1,6 @@
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
-const fs = require('fs');
-const path = require('path');
+const { Readable } = require('stream');
 
 class EventPassGenerator {
   static async generateEventPass(data) {
@@ -17,15 +16,6 @@ class EventPassGenerator {
       size: 'A6',
       margin: 0
     });
-
-    // Ensure the passes directory exists
-    const passesDir = path.join(__dirname, '../public/passes');
-    if (!fs.existsSync(passesDir)) {
-      fs.mkdirSync(passesDir, { recursive: true });
-    }
-
-    const filePath = path.join(passesDir, `${data.id}.pdf`);
-    doc.pipe(fs.createWriteStream(filePath));
 
     // Colors
     const lightBlue = '#E3F2FD';
@@ -100,9 +90,13 @@ class EventPassGenerator {
          width: 297.64
        });
 
-    doc.end();
-    return `/passes/${data.id}.pdf`;
+    // Instead of writing to file, create a buffer
+    return new Promise((resolve, reject) => {
+      const chunks = [];
+      doc.on('data', chunk => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+      doc.end();
+    });
   }
 }
-
-module.exports = EventPassGenerator;

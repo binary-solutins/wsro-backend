@@ -1,7 +1,5 @@
 const nodemailer = require('nodemailer');
-const path = require('path');
 const EventPassGenerator = require('../src/services/eventPassGenerator');
-
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -48,7 +46,7 @@ const sendRegistrationEmail = async (
     .join('');
 
   // Generate event passes for all team members
-  const eventPasses = await Promise.all([
+  const eventPassesPromises = [
     // Generate leader's pass
     EventPassGenerator.generateEventPass({
       id: `${teamCode}-L`,
@@ -67,8 +65,9 @@ const sendRegistrationEmail = async (
         role: 'Team Member'
       })
     )
-  ]);
+  ];
 
+  const eventPassesBuffers = await Promise.all(eventPassesPromises);
   const mailOptions = {
     from: 'binarysolutions0000@gmail.com',
     to: leaderEmail,
@@ -145,9 +144,9 @@ const sendRegistrationEmail = async (
       </body>
       </html>
     `,
-    attachments: eventPasses.map((passPath, index) => ({
+    attachments: eventPassesBuffers.map((buffer, index) => ({
       filename: index === 0 ? 'team-leader-pass.pdf' : `team-member-${index}-pass.pdf`,
-      path: path.join(__dirname, '..', passPath),
+      content: buffer,
       contentType: 'application/pdf'
     }))
   };
@@ -160,6 +159,7 @@ const sendRegistrationEmail = async (
     throw new Error('Failed to send registration email with event passes.');
   }
 };
+
 
 module.exports = {
   verifyEmailConnection,
