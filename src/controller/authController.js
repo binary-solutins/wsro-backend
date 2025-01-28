@@ -139,7 +139,7 @@ exports.checkEmailExists = async (req, res) => {
     try {
         const { emails, competition_id, team_name } = req.body;
 
-        // Validate input
+        // Input validation
         if (!emails || !Array.isArray(emails) || emails.length === 0) {
             console.log('❌ Invalid input format for emails');
             return res.status(400).json({ message: 'Invalid input format for emails' });
@@ -150,65 +150,72 @@ exports.checkEmailExists = async (req, res) => {
             return res.status(400).json({ message: 'Competition ID is required' });
         }
 
-        if (!team_name) {
-            console.log('❌ Team name is required');
-            return res.status(400).json({ message: 'Team name is required' });
-        }
-
-        // Query to check emails and team_name separately
+        // Query to check emails and team name existence
         const [existingRecords] = await db.query(
-            `SELECT DISTINCT 
-                JSON_UNQUOTE(JSON_EXTRACT(r.member_emails, CONCAT('$[', jt.i, ']'))) AS member_email, 
-                r.leader_email,
-                r.team_name
-             FROM Registrations r
-             CROSS JOIN JSON_TABLE(
-                 r.member_emails, '$[*]' 
-                 COLUMNS (i FOR ORDINALITY, member_emails VARCHAR(255) PATH '$')
-             ) jt
-             WHERE r.competition_id = ? AND (
-                 r.leader_email IN (?) OR 
-                 JSON_UNQUOTE(JSON_EXTRACT(r.member_emails, CONCAT('$[', jt.i, ']'))) IN (?) OR
-                 r.team_name = ?
+            `SELECT 
+                leader_email,
+                member_emails,
+                team_name
+             FROM Registrations
+             WHERE competition_id = ? AND (
+                leader_email IN (?) OR
+                team_name = ? OR
+                JSON_CONTAINS(member_emails, ?)
              )`,
-            [competition_id, emails, emails, team_name]
+            [
+                competition_id,
+                emails,
+                team_name,
+                JSON.stringify(emails)
+            ]
         );
-
-        const [teamNameRecords] = await db.query(
-            `SELECT team_name FROM Registrations WHERE competition_id = ? AND team_name = ?`,
-            [competition_id, team_name]
-        );
-
-        if (teamNameRecords.length > 0) {
-            return res.status(200).json({
-                exists: true,
-                message: 'Team name already exists',
-                team_names: [team_name]
-            });
-        }
 
         if (existingRecords.length > 0) {
-            // Collect all unique emails using a Set
-            const foundEmails = Array.from(
-                new Set([
-                    ...existingRecords.map(entry => entry.leader_email),
-                    ...existingRecords.map(entry => entry.member_email)
-                ])
-            ).filter(Boolean);
+            const foundEmails = new Set();
+            const foundTeamNames = new Set();
 
-            const foundTeamNames = Array.from(
-                new Set(existingRecords.map(entry => entry.team_name))
-            ).filter(Boolean);
+            existingRecords.forEach(record => {
+                // Add leader email if it exists in the input emails array
+                if (emails.includes(record.leader_email)) {
+                    foundEmails.add(record.leader_email);
+                }
+
+                // Add team name if it matches
+                if (record.team_name === team_name) {
+                    foundTeamNames.add(record.team_name);
+                }
+
+                // Check member emails
+                try {
+                    const memberEmails = JSON.parse(record.member_emails || '[]');
+                    memberEmails.forEach(email => {
+                        if (emails.includes(email)) {
+                            foundEmails.add(email);
+                        }
+                    });
+                } catch (err) {
+                    console.error('Error parsing member_emails JSON:', err);
+                }
+            });
 
             return res.status(200).json({
                 exists: true,
-                emails: foundEmails,
-                message: 'Some emails already exist'
+                emails: Array.from(foundEmails),
+                team_names: Array.from(foundTeamNames),
+                message: 'Some emails or team names already exist'
             });
         }
 
-        return res.status(404).json({ exists: false, message: 'None of the emails or team names exist for this competition' });
+        return res.status(404).json({
+            exists: false,
+            message: 'None of the emails or team names exist for this competition'
+        });
+
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.error('Error checking email existence:', error);
+        res.status(500).json({ 
+            message: 'Server error', 
+            error: error.message 
+        });
     }
 };
