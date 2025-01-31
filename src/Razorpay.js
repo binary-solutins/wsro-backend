@@ -8,8 +8,8 @@ dotenv.config();
 
 // Initialize Razorpay instance
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_0csZrzRUR87k64',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'Woj9fs8GdWcg66bQFgkDwk3a',
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_live_ypOk1cQlSjUgYk',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'TYxWbczmub0NEhKHBOixa9DJ',
 });
 
 // Route to create an order
