@@ -240,8 +240,49 @@ module.exports = {
                     existingEmails: existingEmails.map(email => email.leader_email || email.member_email),
                 });
             }
+            const [eventResult] = await db.query(
+                'SELECT * FROM Events WHERE id = ?',
+                [event_id]
+              );
+          
+              if (!eventResult[0]) {
+                return res.status(404).json({ 
+                  message: 'Event not found' 
+                });
+              }
+          
 
-            const team_code = generateTeamCode(competition_id);
+            const [competitionResult] = await db.query(
+                `SELECT c.* 
+                 FROM Competitions c
+                 WHERE c.id = ? 
+                 AND c.event_id = ?
+                 AND c.registration_deadline >= CURDATE()`,
+                [competition_id, event_id]
+              );
+          
+              if (!competitionResult[0]) {
+                return res.status(404).json({ 
+                  message: 'Competition not found, does not belong to the event, or registration is closed' 
+                });
+              }
+          
+              
+            
+          
+              if (existingTeam[0]) {
+                return res.status(400).json({ 
+                  message: 'Team name already exists for this competition' 
+                });
+              }
+          
+              // Generate unique team code using event and competition details
+              const eventName = eventResult[0]?.title;
+              const competitionName = competitionResult[0]?.name;
+              console.log(eventResult);
+              console.log(competitionResult)
+              const team_code = generateTeamCode(eventName, competitionName, competition_id);
+          
 
             const connection = await db.getConnection();
             await connection.beginTransaction();
