@@ -33,7 +33,7 @@ router.post(
   adminController.addRegion
 );
 
-router.get('/registrations', adminAuth, adminController.getRegistrations);
+router.get('/registrations', adminController.getRegistrations);
 
 router.post(
   '/certificates',
