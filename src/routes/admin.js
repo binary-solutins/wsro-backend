@@ -34,6 +34,7 @@ router.post(
 );
 
 router.get('/registrations', adminController.getRegistrations);
+router.get('/events/:eventId/registrations/count', adminController.getEventRegistrationStats);
 
 router.post(
   '/certificates',

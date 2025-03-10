@@ -117,3 +117,88 @@ exports.generateEventPass = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
+exports.getEventRegistrationStats = async (req, res) => {
+    try {
+        const { eventId } = req.params;
+
+        // Verify event exists
+        const [event] = await db.query(
+            'SELECT id, title FROM Events WHERE id = ?', 
+            [eventId]
+        );
+        
+        if (!event.length) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        // Get registration statistics
+        const [stats] = await db.query(`
+            SELECT 
+                c.id AS competition_id,
+                c.name AS competition_name,
+                COUNT(r.id) AS registrations_count
+            FROM Competitions c
+            LEFT JOIN Registrations r ON c.id = r.competition_id
+            WHERE c.event_id = ?
+            GROUP BY c.id
+            ORDER BY c.name ASC
+        `, [eventId]);
+
+        // Calculate totals
+        const total_registrations = stats.reduce((acc, curr) => acc + curr.registrations_count, 0);
+
+        res.json({
+            event: {
+                id: parseInt(eventId),
+                name: event[0].title,
+                total_registrations
+            },
+            competitions: stats.map(comp => ({
+                id: comp.competition_id,
+                name: comp.competition_name,
+                registrations: comp.registrations_count
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching registration stats:', error);
+        res.status(500).json({ 
+            message: 'Server error',
+            error: error.message 
+        });
+    }
+};
+
+
+exports.getEventCompetitions = async (req, res) => {
+    try {
+        const { eventId } = req.params;
+
+        // Check if event exists
+        const [event] = await db.query('SELECT title FROM Events WHERE id = ?', [eventId]);
+        if (!event.length) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        // Get competitions with additional stats
+        const [competitions] = await db.query(
+            `SELECT 
+                c.*,
+                (SELECT COUNT(*) FROM Registrations WHERE competition_id = c.id) as team_count,
+                (SELECT COUNT(*) FROM Regions WHERE competition_id = c.id) as region_count
+             FROM Competitions c
+             WHERE c.event_id = ?
+             ORDER BY c.date DESC`,
+            [eventId]
+        );
+
+        res.status(200).json({
+            event_id: parseInt(eventId),
+            event_name: event[0].title,
+            competitions
+        });
+    } catch (error) {
+        console.error('Error fetching competitions:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
