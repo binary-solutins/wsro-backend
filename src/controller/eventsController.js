@@ -63,7 +63,7 @@ exports.getEventsByLevel = async (req, res) => {
 
 exports.updateEvent = async (req, res) => {
     try {
-        const { id, title, level, date, venue } = req.body;
+        const { id, title, level, event_date, venue } = req.body;
 
         // Validate request
         const errors = validationResult(req);
@@ -84,9 +84,9 @@ exports.updateEvent = async (req, res) => {
             updateFields.push('level = ?');
             values.push(level);
         }
-        if (date) {
+        if (event_date) {
             updateFields.push('event_date = ?');
-            values.push(date);
+            values.push(event_date);
         }
         if (venue) {
             updateFields.push('venue = ?');
@@ -117,7 +117,7 @@ exports.updateEvent = async (req, res) => {
 
             if (date) {
                 compUpdateFields.push('date = ?');
-                compValues.push(date);
+                compValues.push(event_date);
             }
             if (venue) {
                 compUpdateFields.push('venue = ?');
@@ -130,10 +130,10 @@ exports.updateEvent = async (req, res) => {
                 `UPDATE Competitions SET ${compUpdateFields.join(', ')} WHERE event_id = ?`,
                 compValues
             );
-            console.log('✅ Competitions table updated with new date and/or venue:', { date, venue });
+            console.log('✅ Competitions table updated with new date and/or venue:', { event_date, venue });
         }
 
-        console.log('✅ Event updated successfully:', { id, title, level, date, venue });
+        console.log('✅ Event updated successfully:', { id, title, level, event_date, venue });
         res.status(200).json({ message: 'Event updated successfully' });
     } catch (error) {
         console.error('❌ Error updating event:', error);
