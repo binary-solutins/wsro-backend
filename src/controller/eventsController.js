@@ -111,7 +111,7 @@ exports.updateEvent = async (req, res) => {
         }
 
         // Update Competitions table if date or venue is provided
-        if (date || venue) {
+        if (event_date || venue) {
             let compUpdateFields = [];
             let compValues = [];
 
