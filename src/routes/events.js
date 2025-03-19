@@ -25,7 +25,7 @@ router.post(
 router.put(
     '/:id',
     [
-        auth,
+       
         body('title').optional().notEmpty().withMessage('Title cannot be empty'),
         body('level')
             .optional()

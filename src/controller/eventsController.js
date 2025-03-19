@@ -63,8 +63,7 @@ exports.getEventsByLevel = async (req, res) => {
 
 exports.updateEvent = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { title, level, date, venue } = req.body;
+        const { id, title, level, date, venue } = req.body;
 
         // Validate request
         const errors = validationResult(req);
