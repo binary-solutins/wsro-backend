@@ -23,7 +23,7 @@ router.post(
 );
 
 router.put(
-    '/:id',
+    '/update',
     [
        
         body('title').optional().notEmpty().withMessage('Title cannot be empty'),
