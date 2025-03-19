@@ -115,7 +115,7 @@ exports.updateEvent = async (req, res) => {
             let compUpdateFields = [];
             let compValues = [];
 
-            if (date) {
+            if (event_date) {
                 compUpdateFields.push('date = ?');
                 compValues.push(event_date);
             }
