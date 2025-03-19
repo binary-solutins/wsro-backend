@@ -64,13 +64,46 @@ exports.getEventsByLevel = async (req, res) => {
 exports.updateEvent = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, level } = req.body;
+        const { title, level, date, venue } = req.body;
+
+        // Validate request
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
 
         console.log('✏️ Updating event with ID:', id);
 
+        let updateFields = [];
+        let values = [];
+
+        if (title) {
+            updateFields.push('title = ?');
+            values.push(title);
+        }
+        if (level) {
+            updateFields.push('level = ?');
+            values.push(level);
+        }
+        if (date) {
+            updateFields.push('event_date = ?');
+            values.push(date);
+        }
+        if (venue) {
+            updateFields.push('venue = ?');
+            values.push(venue);
+        }
+
+        if (updateFields.length === 0) {
+            return res.status(400).json({ message: 'No fields provided for update' });
+        }
+
+        values.push(id);
+
+        // Update Events table
         const [result] = await db.query(
-            'UPDATE Events SET title = ?, level = ? WHERE id = ?',
-            [title, level, id]
+            `UPDATE Events SET ${updateFields.join(', ')} WHERE id = ?`,
+            values
         );
 
         if (result.affectedRows === 0) {
@@ -78,7 +111,30 @@ exports.updateEvent = async (req, res) => {
             return res.status(404).json({ message: 'Event not found' });
         }
 
-        console.log('✅ Event updated successfully:', { id, title });
+        // Update Competitions table if date or venue is provided
+        if (date || venue) {
+            let compUpdateFields = [];
+            let compValues = [];
+
+            if (date) {
+                compUpdateFields.push('date = ?');
+                compValues.push(date);
+            }
+            if (venue) {
+                compUpdateFields.push('venue = ?');
+                compValues.push(venue);
+            }
+
+            compValues.push(id);
+
+            await db.query(
+                `UPDATE Competitions SET ${compUpdateFields.join(', ')} WHERE event_id = ?`,
+                compValues
+            );
+            console.log('✅ Competitions table updated with new date and/or venue:', { date, venue });
+        }
+
+        console.log('✅ Event updated successfully:', { id, title, level, date, venue });
         res.status(200).json({ message: 'Event updated successfully' });
     } catch (error) {
         console.error('❌ Error updating event:', error);

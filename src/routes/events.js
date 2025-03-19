@@ -31,6 +31,11 @@ router.put(
             .optional()
             .isIn(['regional', 'national', 'international', 'startup-award'])
             .withMessage('Invalid level value'),
+        body('date')
+            .optional()
+            .isISO8601()
+            .withMessage('Invalid date format (ISO 8601 required)'),
+        body('venue').optional().notEmpty().withMessage('Venue cannot be empty'),
     ],
     eventController.updateEvent
 );
