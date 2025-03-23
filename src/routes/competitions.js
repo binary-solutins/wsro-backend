@@ -35,4 +35,6 @@ router.post('/send-certificates', [
 
 router.post('/sent-team-certificates', auth, competitionController.sendTeamCertificates);
 
+router.post('/resend-email', competitionController.resendEventPassEmail);
+
 module.exports = router;

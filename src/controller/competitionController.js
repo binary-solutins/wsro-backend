@@ -7,7 +7,7 @@ const {
   generateCertificate,
 } = require("../../utils/certificateService");
 const upload = require("../config/s3");
-const { sendRegistrationEmail } = require("../../utils/emailService");
+const { sendRegistrationEmail, sendParticipantEmail, sendTeamSummaryEmail } = require("../../utils/emailService");
 const fs = require("fs").promises;
 
 module.exports = {
@@ -209,15 +209,15 @@ module.exports = {
       member_ages,
       member_emails,
       member_phones,
-      member_states,       
+      member_states,      
       member_cities,      
-      member_zipcodes,     
-      member_institutions, 
+      member_zipcodes,    
+      member_institutions,
       event_id,
-      no_of_students, 
+      no_of_students,
     } = req.body;
 
-    
+   
     if (
       !member_names ||
       !Array.isArray(member_names) ||
@@ -258,7 +258,7 @@ module.exports = {
       return res.status(400).json({ message: "Number of students is required and must be a number" });
     }
 
-    
+   
     const memberCount = member_names.length;
     if (
       member_emails.length !== memberCount ||
@@ -274,9 +274,9 @@ module.exports = {
     }
 
     try {
-      
+     
       const [competition] = await db.query(
-        `SELECT * FROM Competitions 
+        `SELECT * FROM Competitions
                  WHERE id = ? AND registration_deadline >= CURDATE()`,
         [competition_id]
       );
@@ -287,7 +287,7 @@ module.exports = {
         });
       }
 
-      
+     
       const [existingTeam] = await db.query(
         "SELECT id FROM Registrations WHERE competition_id = ? AND team_name = ?",
         [competition_id, team_name]
@@ -303,8 +303,8 @@ module.exports = {
 
       for (const email of member_emails) {
         const [result] = await db.query(
-          `SELECT 1 FROM Registrations 
-                     WHERE competition_id = ? 
+          `SELECT 1 FROM Registrations
+                     WHERE competition_id = ?
                      AND JSON_CONTAINS(member_emails, ?)`,
           [competition_id, JSON.stringify(email)]
         );
@@ -321,7 +321,7 @@ module.exports = {
         });
       }
 
-      
+     
       const [event] = await db.query("SELECT title FROM Events WHERE id = ?", [
         event_id,
       ]);
@@ -349,9 +349,9 @@ module.exports = {
         const [result] = await connection.query(
           `INSERT INTO Registrations (
                         competition_id, event_id, team_code, team_name,
-                        coach_mentor_name, coach_mentor_organization, 
+                        coach_mentor_name, coach_mentor_organization,
                         coach_mentor_phone, coach_mentor_email,
-                        member_names, member_ages, member_emails, 
+                        member_names, member_ages, member_emails,
                         member_phones, member_states, member_cities,
                         member_zipcodes, member_institutions,
                         no_of_students, participant_id, status, payment_status
@@ -379,22 +379,34 @@ module.exports = {
         );
 
         await connection.commit();
+        
+        // Send individual event passes to each participant
         try {
+          // Create an array of member objects for email sending
+          const membersList = member_names.map((name, index) => ({
+            name: name,
+            email: member_emails[index],
+            participant_id: participant_id[index]
+          }));
+
+          // Send individual emails to each participant
           await Promise.all(
-            member_emails.map(async (email, index) => {
-              if (email) {
-                await sendRegistrationEmail({
-                  email,
-                  name: member_names[index],
-                  team_name,
-                  team_code,
-                  participant_id: participant_id[index],
+            membersList.map(async (member) => {
+              if (member.email) {
+                await sendParticipantEmail({
+                  email: member.email,
+                  name: member.name,
+                  team_name: team_name,
+                  team_code: team_code,
+                  participant_id: member.participant_id,
                   competition_name: competition[0].name,
-                  event_name: event[0].title,
+                  event_name: event[0].title
                 });
               }
             })
           );
+        
+          
         } catch (emailError) {
           console.error("Email sending error:", emailError);
         }
@@ -607,4 +619,85 @@ module.exports = {
       res.status(500).json({ message: "Server error", error: error.message });
     }
   },
+
+   resendEventPassEmail: async (req, res) => {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+  
+    const { email } = req.body;
+  
+    try {
+      // Find all registrations where this email exists in member_emails
+      const [registrations] = await db.query(
+        `SELECT r.*, c.name as competition_name, e.title as event_name 
+         FROM Registrations r
+         JOIN Competitions c ON r.competition_id = c.id
+         JOIN Events e ON r.event_id = e.id
+         WHERE JSON_CONTAINS(r.member_emails, ?)`,
+        [JSON.stringify(email)]
+      );
+  
+      if (!registrations || registrations.length === 0) {
+        return res.status(404).json({
+          message: "No registrations found for this email address"
+        });
+      }
+  
+      // Track which teams the participant is part of for response
+      const teamResults = [];
+  
+      // Process each registration
+      for (const registration of registrations) {
+        // Parse JSON fields
+        const memberNames = JSON.parse(registration.member_names);
+        const memberEmails = JSON.parse(registration.member_emails);
+        const participantIds = JSON.parse(registration.participant_id);
+        
+        // Find the participant's index in this team
+        const participantIndex = memberEmails.findIndex(memberEmail => 
+          memberEmail.toLowerCase() === email.toLowerCase()
+        );
+        
+        if (participantIndex !== -1) {
+          // Get participant details
+          const name = memberNames[participantIndex];
+          const participant_id = participantIds[participantIndex];
+          
+          // Send email to the participant
+          await sendParticipantEmail({
+            email,
+            name,
+            team_name: registration.team_name,
+            team_code: registration.team_code,
+            participant_id,
+            competition_name: registration.competition_name,
+            event_name: registration.event_name
+          });
+          
+          teamResults.push({
+            team_name: registration.team_name,
+            team_code: registration.team_code,
+            participant_id,
+            competition_name: registration.competition_name
+          });
+        }
+      }
+  
+      // Return success response
+      res.status(200).json({
+        message: "Event pass email(s) resent successfully",
+        teams: teamResults
+      });
+      
+    } catch (error) {
+      console.error("Error resending event pass email:", error);
+      res.status(500).json({
+        message: "Server error",
+        error: error.message
+      });
+    }
+   }
 };

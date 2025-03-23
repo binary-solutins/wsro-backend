@@ -9,8 +9,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: 'binarysolutions0000@gmail.com',
-    pass: 'volw mohh opdb llpi'
+    user: 'competitionswsro@gmail.com',
+    pass: 'hxvg uavf bybs rczm'
   },
   tls: {
     rejectUnauthorized: false
@@ -111,7 +111,7 @@ async function sendCertificateEmail(emailData) {
   } = emailData;
 
   const mailOptions = {
-    from: 'binarysolutions0000@gmail.com',
+    from: 'competitionswsro@gmail.com',
     to: email,
     subject: `Your Certificate - ${competitionName}`,
     html: `<!-- HTML content for the email -->`,

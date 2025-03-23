@@ -1,121 +1,148 @@
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
 const fs = require('fs');
-const path = require('path'); 
+const path = require('path');
 
 class EventPassGenerator {
   static async generateEventPass(data) {
-    // Generate QR code as a Buffer
+    // Generate QR code
     const qrCodeBuffer = await QRCode.toBuffer(JSON.stringify({
       id: data.id,
       participant_id: data.participant_id,
       name: data.name,
       event: data.competition_name,
       role: data.role
-    }));
-
-    // Set the path for your local logo image
-    const logoPath = path.join(__dirname, 'assests', 'images', 'logo.jpg'); // Change this path based on your local setup
-
-    const doc = new PDFDocument({
-      size: 'A6',
-      margin: 0
+    }), {
+      errorCorrectionLevel: 'H',
+      margin: 1,
+      scale: 6
     });
 
-    // Color Palette
+    // Set paths for assets
+    const logoPath = path.join(__dirname, 'assests', 'images', 'logo.jpg');
+    
+    // Set paths for Poppins font files
+    const poppinsRegularPath = path.join(__dirname, 'assests', 'fonts', 'Poppins-Regular.ttf');
+    const poppinsBoldPath = path.join(__dirname, 'assests', 'fonts', 'Poppins-Bold.ttf');
+    const poppinsMediumPath = path.join(__dirname, 'assests', 'fonts', 'Poppins-Medium.ttf');
+
+    // Document dimensions (ID card style)
+    const width = 242; // ~3.4 inches
+    const height = 383; // ~5.3 inches
+    
+    // Create a PDF with ID card dimensions
+    const doc = new PDFDocument({
+      size: [width, height],
+      margin: 0,
+      autoFirstPage: true
+    });
+
+    // Register fonts
+    doc.registerFont('PoppinsRegular', poppinsRegularPath);
+    doc.registerFont('PoppinsBold', poppinsBoldPath);
+    doc.registerFont('PoppinsMedium', poppinsMediumPath);
+
+    // Color scheme (orange accent like the example)
     const colors = {
-      background: '#F0F4F8',
-      primaryBlue: '#1E3A8A',
-      secondaryBlue: '#3B82F6',
-      accentOrange: '#F97316',
-      textDark: '#1F2937',
-      textLight: '#F9FAFB'
+      primary: '#F05A28', // Orange
+      white: '#FFFFFF',
+      light: '#F8F8F8',
+      dark: '#333333',
+      gray: '#888888'
     };
 
-    // Background
-    doc.rect(0, 0, 297.64, 420)
-       .fill(colors.background);
+    // Create white background
+    doc.rect(0, 0, width, height).fill(colors.white);
 
-    // Header with Logo
-    const logoWidth = 80;  // Width of the logo
-    const logoHeight = 50; // Height of the logo
-    const logoX = (297.64 - logoWidth) / 2;  // Center the logo horizontally
-    const logoY = 20;  // Position the logo at the top
+    // Left sidebar with role
+    doc.rect(0, 0, 60, height).fill(colors.primary);
+    
+    // "PARTICIPANT" text (vertical on left side)
+    doc.save();
+    doc.translate(30, height - 30);
+    doc.rotate(-90);
+    doc.font('PoppinsBold')
+      .fontSize(18)
+      .fillColor(colors.white)
+      .text("PARTICIPANT", 0, 0, {
+        align: 'center',
+        width: height - 60
+      });
+    doc.restore();
 
-    // Pass the local logo image path to pdfkit's .image() method
-    doc.image(logoPath, logoX, logoY, { 
-      width: logoWidth, 
-      height: logoHeight
+    // Event logo at top-right section
+    doc.image(logoPath, 90, 30, {
+      width: 120,
+      height: 60,
+      fit: [120, 60],
+      align: 'center'
     });
 
-    // Event Name (Placed after the logo)
-    doc.font('Helvetica-Bold')
-       .fontSize(24)
-       .fillColor(colors.primaryBlue)
-       .text(data.competition_name, 0, logoY + logoHeight + 10, {  // Add a small gap after the logo
-         align: 'center',
-         width: 297.64
-       });
+    // Competition name (single line)
+    doc.font('PoppinsBold')
+      .fontSize(16)
+      .fillColor(colors.primary)
+      .text(data.competition_name, 70, 100, {
+        width: 162,
+        align: 'center'
+      });
 
-    // Decorative Line
-    doc.strokeColor(colors.secondaryBlue)
-       .lineWidth(2)
-       .moveTo(20, logoY + logoHeight + 40) // Line starts below the competition name
-       .lineTo(277.64, logoY + logoHeight + 40)
-       .stroke();
+    // Horizontal line separator
+    doc.strokeColor(colors.gray)
+      .lineWidth(1)
+      .moveTo(70, 130)
+      .lineTo(232, 130)
+      .stroke();
 
-    // Role Badge
-    doc.rect(20, logoY + logoHeight + 50, 257.64, 40)
-       .fill(colors.accentOrange);
-    
-    doc.font('Helvetica-Bold')
-       .fontSize(16)
-       .fillColor(colors.textLight)
-       .text(data.role, 0, logoY + logoHeight + 60, {
-         align: 'center',
-         width: 297.64
-       });
+    // Participant name (medium size)
+    doc.font('PoppinsMedium')
+      .fontSize(14)
+      .fillColor(colors.dark)
+      .text("Name:", 70, 150);
+      
+    doc.font('PoppinsRegular')
+      .fontSize(14)
+      .fillColor(colors.dark)
+      .text(data.name, 70, 170, {
+        width: 162
+      });
 
-    // Participant Information Section
-    doc.font('Helvetica')
-       .fillColor(colors.textDark)
-       .fontSize(12)
-       .text('Name:', 40, logoY + logoHeight + 110)
-       .font('Helvetica-Bold')
-       .fontSize(14)
-       .text(data.name, 40, logoY + logoHeight + 130, { width: 217.64 })
-       .font('Helvetica')
-       .fontSize(12)
-       .text('Participant ID:', 40, logoY + logoHeight + 160)
-       .font('Helvetica-Bold')
-       .text(data.participant_id, 40, logoY + logoHeight + 180);
+    // Participant ID (medium size)
+    doc.font('PoppinsMedium')
+      .fontSize(14)
+      .fillColor(colors.dark)
+      .text("ID:", 70, 200);
+      
+    doc.font('PoppinsRegular')
+      .fontSize(14)
+      .fillColor(colors.dark)
+      .text(data.participant_id, 70, 220, {
+        width: 162
+      });
 
-    // QR Code Section
-    doc.rect(20, logoY + logoHeight + 210, 257.64, 130)
-       .fill('#FFFFFF')
-       .strokeColor(colors.secondaryBlue)
-       .lineWidth(1)
-       .stroke();
+    // Access level
+    doc.roundedRect(70, 250, 162, 25, 5)
+      .fill(colors.primary);
+      
+    doc.font('PoppinsBold')
+      .fontSize(14)
+      .fillColor(colors.white)
+      .text('EVENT ACCESS', 70, 255, {
+        width: 162,
+        align: 'center'
+      });
 
-    // QR Code: Pass the QR Code Buffer here
-    doc.image(qrCodeBuffer, 98.82, logoY + logoHeight + 220, { width: 100 });
+    // QR code at bottom
+    doc.image(qrCodeBuffer, 101, 290, {
+      width: 80,
+      height: 80
+    });
 
-    // Scan Instructions
-    doc.font('Helvetica')
-       .fontSize(10)
-       .fillColor(colors.primaryBlue)
-       .text('Scan for Event Verification', 0, logoY + logoHeight + 360, {
-         align: 'center',
-         width: 297.64
-       });
-
-    // Footer
-    doc.fontSize(8)
-       .fillColor('#6B7280')
-       .text('Official Event Pass - Keep Safe', 0, logoY + logoHeight + 380, {
-         align: 'center',
-         width: 297.64
-       });
+    // Small decoration hole at top
+    doc.circle(width / 2, 10, 7)
+      .fill('#EEEEEE');
+    doc.circle(width / 2, 10, 5)
+      .fill(colors.white);
 
     // Create PDF buffer and save
     return new Promise((resolve, reject) => {
