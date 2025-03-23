@@ -87,7 +87,7 @@ const sendParticipantEmail = async ({ email, name, team_name, team_code, partici
           <!-- Footer -->
           <div style="background-color: #E3F2FD; padding: 20px; text-align: center;">
             <p style="margin: 0; color: #666; font-size: 14px;">
-              Need help? Contact us at <a href="mailto:support@binarysolutions.com" style="color: #1E88E5; text-decoration: none;">support@binarysolutions.com</a>
+              Need help? Contact us at <a href="mailto:support@wsro.in" style="color: #1E88E5; text-decoration: none;">support@wsro.in</a>
             </p>
             <div style="margin-top: 15px;">
               <p style="color: #FB8C00; margin: 0;">Best of luck! 🚀</p>
@@ -191,7 +191,7 @@ const sendTeamSummaryEmail = async ({ email, team_name, team_code, competition_n
           <!-- Footer -->
           <div style="background-color: #E3F2FD; padding: 20px; text-align: center;">
             <p style="margin: 0; color: #666; font-size: 14px;">
-              Need help? Contact us at <a href="mailto:support@binarysolutions.com" style="color: #1E88E5; text-decoration: none;">support@binarysolutions.com</a>
+              Need help? Contact us at <a href="mailto:support@wsro.in" style="color: #1E88E5; text-decoration: none;">support@wsro.in</a>
             </p>
             <div style="margin-top: 15px;">
               <p style="color: #FB8C00; margin: 0;">Best of luck to your team! 🚀</p>
