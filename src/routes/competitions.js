@@ -29,6 +29,11 @@ router.delete('/:id', auth, competitionController.deleteCompetition);
 
 router.post('/register', competitionController.registerForCompetition);
 
+router.post('/register-iran', competitionController.registerIranCompetition);
+router.post('/get-iran', competitionController.getIranRegistrationByCertificateId);
+
+router.get('/getall-iran', competitionController.getAllIranRegistrations);
+
 router.post('/send-certificates', [
   auth,
 ], competitionController.sendBulkCertificates);

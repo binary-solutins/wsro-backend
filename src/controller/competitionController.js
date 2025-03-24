@@ -431,6 +431,220 @@ module.exports = {
     }
   },
 
+  registerIranCompetition: async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+  
+    const entries = req.body;
+  
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return res.status(400).json({ message: "Entries array is required" });
+    }
+  
+    // Validate each entry
+    for (const entry of entries) {
+      if (!entry.full_name || !entry.school_institute || !entry.dob || 
+          !entry.age || !entry.course_name_competition_category || !entry.grade_or_winning_rank) {
+        return res.status(400).json({ message: "All fields are required for each entry" });
+      }
+      
+      if (isNaN(entry.age) || entry.age < 1) {
+        return res.status(400).json({ message: "Valid age is required" });
+      }
+    }
+  
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+  
+    try {
+      // Get and lock sequence
+      const [seq] = await connection.query(
+        'SELECT current_val FROM iran_certificate_sequence FOR UPDATE'
+      );
+      const currentVal = seq[0].current_val;
+      const newVal = currentVal + entries.length;
+  
+      // Generate certificate IDs
+      const entriesWithCertId = entries.map((entry, index) => {
+        const sequenceNumber = currentVal + index + 1;
+        return {
+          ...entry,
+          certificate_u_id: `IR/CR${sequenceNumber.toString().padStart(6, '0')}`
+        };
+      });
+  
+      // Update sequence
+      await connection.query(
+        'UPDATE iran_certificate_sequence SET current_val = ?',
+        [newVal]
+      );
+  
+      // Prepare bulk insert
+      const values = entriesWithCertId.map(entry => [
+        entry.full_name,
+        entry.school_institute,
+        entry.dob,
+        entry.age,
+        entry.course_name_competition_category,
+        entry.grade_or_winning_rank,
+        entry.certificate_u_id
+      ]);
+  
+      await connection.query(
+        `INSERT INTO iran_registrations 
+        (full_name, school_institute, dob, age, course_name_competition_category, grade_or_winning_rank, certificate_u_id)
+        VALUES ?`,
+        [values]
+      );
+  
+      await connection.commit();
+  
+      res.status(201).json({
+        message: "Registrations added successfully",
+        entries: entriesWithCertId.map(e => ({
+          full_name: e.full_name,
+          certificate_u_id: e.certificate_u_id
+        }))
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error("Registration Error:", error);
+      res.status(500).json({
+        message: "Server error",
+        error: error.message
+      });
+    } finally {
+      connection.release();
+    }
+  },
+
+  getIranRegistrationByCertificateId: async (req, res) => {
+    const { certificate_u_id } = req.body;
+  
+    if (!certificate_u_id) {
+      return res.status(400).json({ message: "certificate_u_id is required" });
+    }
+  
+    try {
+      const [result] = await db.query(
+        `SELECT 
+          id,
+          full_name,
+          school_institute,
+          DATE_FORMAT(dob, '%Y-%m-%d') as dob,
+          age,
+          course_name_competition_category,
+          grade_or_winning_rank,
+          certificate_u_id
+        FROM iran_registrations
+        WHERE certificate_u_id = ?`,
+        [certificate_u_id]
+      );
+  
+      if (!result || result.length === 0) {
+        return res.status(404).json({ message: "Registration not found" });
+      }
+  
+      res.status(200).json({
+        message: "Registration details retrieved successfully",
+        data: result[0]
+      });
+    } catch (error) {
+      console.error("Error fetching registration:", error);
+      res.status(500).json({
+        message: "Server error",
+        error: error.message
+      });
+    }
+  },
+
+  getAllIranRegistrations: async (req, res) => {
+    try {
+      // Get pagination parameters from query (default to page 1, 20 items per page)
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const offset = (page - 1) * limit;
+  
+      // Get optional filters
+      const { search, sort_by = 'id', sort_order = 'DESC' } = req.query;
+  
+      // Base query
+      let query = `
+        SELECT 
+          id,
+          full_name,
+          school_institute,
+          DATE_FORMAT(dob, '%Y-%m-%d') as dob,
+          age,
+          course_name_competition_category,
+          grade_or_winning_rank,
+          certificate_u_id
+        FROM iran_registrations
+      `;
+  
+      // Add search filter if provided
+      const params = [];
+      if (search) {
+        query += ` WHERE 
+          full_name LIKE ? OR 
+          school_institute LIKE ? OR 
+          course_name_competition_category LIKE ? OR 
+          certificate_u_id LIKE ?`;
+        const searchTerm = `%${search}%`;
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      }
+  
+      // Add sorting
+      const validSortColumns = ['id', 'full_name', 'age', 'dob', 'certificate_u_id'];
+      const sortColumn = validSortColumns.includes(sort_by) ? sort_by : 'id';
+      const order = sort_order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+      query += ` ORDER BY ${sortColumn} ${order}`;
+  
+      // Add pagination
+      query += ` LIMIT ? OFFSET ?`;
+      params.push(limit, offset);
+  
+      // Execute query
+      const [registrations] = await db.query(query, params);
+  
+      // Get total count for pagination info
+      let countQuery = `SELECT COUNT(*) as total FROM iran_registrations`;
+      if (search) {
+        countQuery += ` WHERE 
+          full_name LIKE ? OR 
+          school_institute LIKE ? OR 
+          course_name_competition_category LIKE ? OR 
+          certificate_u_id LIKE ?`;
+      }
+      const [totalResult] = await db.query(countQuery, search ? 
+        [`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`] : []);
+  
+      const total = totalResult[0].total;
+      const totalPages = Math.ceil(total / limit);
+  
+      res.status(200).json({
+        message: "Registrations retrieved successfully",
+        data: registrations,
+        pagination: {
+          current_page: page,
+          per_page: limit,
+          total_records: total,
+          total_pages: totalPages,
+          has_next_page: page < totalPages,
+          has_previous_page: page > 1
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching registrations:", error);
+      res.status(500).json({
+        message: "Server error",
+        error: error.message
+      });
+    }
+  },
+
   sendBulkCertificates: async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
