@@ -7,7 +7,7 @@ const competitionController = require('../controller/competitionController');
 const upload = require('../config/s3');
 
 router.get('/', competitionController.getCompetitions);
-
+router.get('/admin', competitionController.getCompetitionsAdmin);
 router.post(
   '/new',
   upload.fields([{ name: 'pdf', maxCount: 1 }, { name: 'zip', maxCount: 1 }]),
@@ -26,6 +26,7 @@ router.put(
 );
 
 router.delete('/:id', auth, competitionController.deleteCompetition);
+
 
 router.post('/register', competitionController.registerForCompetition);
 

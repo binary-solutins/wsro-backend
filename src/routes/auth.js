@@ -3,7 +3,6 @@ const router = express.Router();
 const { body } = require('express-validator');
 const authController = require('../controller/authController');
 const { auth } = require('../middleware/auth');
-const { resendEventPassEmail } = require('../controller/competitionController');
 
 router.post('/register', [
   body('name').notEmpty().withMessage('Name is required'),
@@ -26,8 +25,6 @@ router.post('/check-email', [
   body('competition_id').notEmpty().withMessage('Competition ID is required'),
   body('team_name').notEmpty().withMessage('Team name is required')
 ], authController.checkEmailExists);
-
-router.post('/resend-email', resendEventPassEmail);
 
 
 module.exports = router;
