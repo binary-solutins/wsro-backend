@@ -37,21 +37,21 @@ module.exports = {
       res.status(500).json({ message: "Server error", error: error.message });
     }
   },
-  getCompetitionsAdmin: async (req, res) => {
+
+  getCompetitionsAll: async (req, res) => {
     try {
       const { event_id } = req.query;
 
       let query = `
             SELECT c.*, 
               (SELECT COUNT(*) FROM Regions r WHERE r.competition_id = c.id) as regions_count
-            FROM Competitions c 
-           
+            FROM Competitions c
         `;
 
       const queryParams = [];
 
       if (event_id) {
-        query += ` AND c.event_id = ?`;
+        query += ` WHERE c.event_id = ?`;
         queryParams.push(event_id);
       }
 
@@ -59,10 +59,11 @@ module.exports = {
 
       res.json(competitions);
     } catch (error) {
-      console.error("Error fetching competitions:", error);
+      console.error("Error fetching all competitions:", error);
       res.status(500).json({ message: "Server error", error: error.message });
     }
   },
+  
 
   createCompetition: async (req, res) => {
     const errors = validationResult(req);

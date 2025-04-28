@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
@@ -7,7 +6,8 @@ const competitionController = require('../controller/competitionController');
 const upload = require('../config/s3');
 
 router.get('/', competitionController.getCompetitions);
-router.get('/admin', competitionController.getCompetitionsAdmin);
+router.get('/all', competitionController.getCompetitionsAll); // Route to get all competitions.  Example curl -X GET "http://localhost:3000/api/competitions/all?event_id=123"
+
 router.post(
   '/new',
   upload.fields([{ name: 'pdf', maxCount: 1 }, { name: 'zip', maxCount: 1 }]),
