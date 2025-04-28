@@ -6,7 +6,8 @@ const competitionController = require('../controller/competitionController');
 const upload = require('../config/s3');
 
 router.get('/', competitionController.getCompetitions);
-router.get('/all', competitionController.getCompetitionsAll); // Route to get all competitions.  Example curl -X GET "http://localhost:3000/api/competitions/all?event_id=123"
+router.get('/all', competitionController.getCompetitionsAll);
+router.post('/delete', competitionController.toggleCompetitionIsDeleted); // Route to get all competitions.  Example curl -X GET "http://localhost:3000/api/competitions/all?event_id=123"
 
 router.post(
   '/new',

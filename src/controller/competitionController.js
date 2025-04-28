@@ -941,5 +941,45 @@ module.exports = {
         error: error.message
       });
     }
-   }
+   },
+
+  toggleCompetitionIsDeleted: async (req, res) => {
+    const { competition_id } = req.body;
+
+    if (!competition_id) {
+      return res.status(400).json({ message: "Competition ID is required" });
+    }
+
+    try {
+      const [competition] = await db.query(
+        "SELECT is_deleted FROM Competitions WHERE id = ?",
+        [competition_id]
+      );
+
+      if (!competition || competition.length === 0) {
+        return res.status(404).json({ message: "Competition not found" });
+      }
+
+      const currentIsDeleted = competition[0].is_deleted;
+      const newIsDeleted = currentIsDeleted === 0 ? 1 : 0;
+
+      await db.query(
+        "UPDATE Competitions SET is_deleted = ? WHERE id = ?",
+        [newIsDeleted, competition_id]
+      );
+
+      res.status(200).json({
+        message: "Competition is_deleted status toggled successfully",
+        is_deleted: newIsDeleted,
+      });
+    } catch (error) {
+      console.error(
+        "Error toggling competition is_deleted status:",
+        error
+      );
+      res
+        .status(500)
+        .json({ message: "Server error", error: error.message });
+    }
+  },
 };
