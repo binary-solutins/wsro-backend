@@ -18,9 +18,7 @@ const pool = mysql.createPool({
   timeout: 60000,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
-  ssl: {
-    rejectUnauthorized: false // Changed to false to work with self-signed certificates
-  },
+  ssl: false,
   // Add retry strategy
   maxRetries: 3,
   retryDelay: 3000
