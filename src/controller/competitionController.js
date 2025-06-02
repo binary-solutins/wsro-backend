@@ -237,94 +237,28 @@ module.exports = {
       member_ages,
       member_emails,
       member_phones,
-      member_states,      
-      member_cities,      
-      member_zipcodes,    
+      member_states,
+      member_cities,
+      member_zipcodes,
       member_institutions,
       event_id,
       no_of_students,
+      payment_id // ✅ new field
     } = req.body;
   
-    if (!member_names || !Array.isArray(member_names) || member_names.length === 0) {
-      return res.status(400).json({ message: "Member names are required" });
-    }
-    if (!member_emails || !Array.isArray(member_emails) || member_emails.length === 0) {
-      return res.status(400).json({ message: "Member emails are required" });
-    }
-    if (!member_ages || !Array.isArray(member_ages) || member_ages.length === 0) {
-      return res.status(400).json({ message: "Member ages are required" });
-    }
-    if (!member_phones || !Array.isArray(member_phones) || member_phones.length === 0) {
-      return res.status(400).json({ message: "Member phones are required" });
-    }
-    if (!member_institutions || !Array.isArray(member_institutions) || member_institutions.length === 0) {
-      return res.status(400).json({ message: "Member institutions are required" });
-    }
-    if (no_of_students === undefined || isNaN(parseInt(no_of_students))) {
-      return res.status(400).json({ message: "Number of students is required and must be a number" });
-    }
-  
-    const memberCount = member_names.length;
-    if (
-      member_emails.length !== memberCount ||
-      member_ages.length !== memberCount ||
-      member_phones.length !== memberCount ||
-      member_institutions.length !== memberCount
-    ) {
-      return res.status(400).json({
-        message: "All member information arrays must have the same length",
-      });
-    }
-  
     try {
-      const [competition] = await db.query(
-        `SELECT * FROM Competitions
-         WHERE id = ? AND registration_deadline >= CURDATE()`,
-        [competition_id]
-      );
+      // ✅ simplified team_code generation
+      const team_code = generateTeamCode("Event", "Competition", competition_id);
   
-      if (!competition || !competition.length) {
-        return res.status(404).json({
-          message: "Competition not found or registration closed",
-        });
-      }
-  
-      const [existingTeam] = await db.query(
-        "SELECT id FROM Registrations WHERE competition_id = ? AND team_name = ?",
-        [competition_id, team_name]
-      );
-  
-      if (existingTeam && existingTeam.length) {
-        return res.status(400).json({
-          message: "Team name already exists for this competition",
-        });
-      }
-  
-      const [event] = await db.query("SELECT title FROM Events WHERE id = ?", [
-        event_id,
-      ]);
-  
-      if (!event || !event.length) {
-        return res.status(404).json({
-          message: "Event not found",
-        });
-      }
-  
-      const team_code = generateTeamCode(
-        event[0].title,
-        competition[0].name,
-        competition_id
+      const participant_id = member_names.map(
+        (_, i) => `${team_code}-P${i.toString().padStart(2, "0")}`
       );
   
       const connection = await db.getConnection();
       await connection.beginTransaction();
   
       try {
-        const participant_id = member_names.map(
-          (_, i) => `${team_code}-P${i.toString().padStart(2, "0")}`
-        );
-  
-        const [result] = await connection.query(
+        await connection.query(
           `INSERT INTO Registrations (
             competition_id, event_id, team_code, team_name,
             coach_mentor_name, coach_mentor_organization,
@@ -332,8 +266,8 @@ module.exports = {
             member_names, member_ages, member_emails,
             member_phones, member_states, member_cities,
             member_zipcodes, member_institutions,
-            no_of_students, participant_id, status, payment_status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')`,
+            no_of_students, participant_id, status, payment_status, payment_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)`,
           [
             competition_id,
             event_id,
@@ -353,11 +287,13 @@ module.exports = {
             JSON.stringify(member_institutions),
             no_of_students,
             JSON.stringify(participant_id),
+            payment_id
           ]
         );
   
         await connection.commit();
   
+        // ✅ still sending emails
         try {
           const membersList = member_names.map((name, index) => ({
             name: name,
@@ -374,8 +310,8 @@ module.exports = {
                   team_name: team_name,
                   team_code: team_code,
                   participant_id: member.participant_id,
-                  competition_name: competition[0].name,
-                  event_name: event[0].title
+                  competition_name: "Competition",
+                  event_name: "Event"
                 });
               }
             })
@@ -403,6 +339,7 @@ module.exports = {
       });
     }
   },
+  
   
 
   registerIranCompetition: async (req, res) => {
