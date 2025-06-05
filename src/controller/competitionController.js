@@ -273,7 +273,7 @@ module.exports = {
 
     // ✅ Get the current team count for the same event and competition
     const [[{ count }]] = await connection.query(
-      'SELECT COUNT(*) AS count FROM registration WHERE event_id = ? AND competition_id = ?',
+      'SELECT COUNT(*) AS count FROM Registrations WHERE event_id = ? AND competition_id = ?',
       [event_id, competition_id]
     );
 
