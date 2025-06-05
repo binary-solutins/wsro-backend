@@ -6,6 +6,7 @@ const {
   sendCertificateEmail,
   generateCertificate,
 } = require("../../utils/certificateService");
+const XLSX = require('xlsx');
 const upload = require("../config/s3");
 const { sendRegistrationEmail, sendParticipantEmail, sendTeamSummaryEmail } = require("../../utils/emailService");
 const fs = require("fs").promises;
@@ -220,125 +221,149 @@ module.exports = {
     }
   },
 
-  registerForCompetition: async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-  
-    const {
-      competition_id,
-      team_name,
-      coach_mentor_name,
-      coach_mentor_organization,
-      coach_mentor_phone,
-      coach_mentor_email,
-      member_names,
-      member_ages,
-      member_emails,
-      member_phones,
-      member_states,
-      member_cities,
-      member_zipcodes,
-      member_institutions,
-      event_id,
-      no_of_students,
-      payment_id // ✅ new field
-    } = req.body;
-  
+ registerForCompetition: async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const {
+    competition_id,
+    team_name,
+    coach_mentor_name,
+    coach_mentor_organization,
+    coach_mentor_phone,
+    coach_mentor_email,
+    member_names,
+    member_ages,
+    member_emails,
+    member_phones,
+    member_states,
+    member_cities,
+    member_zipcodes,
+    member_institutions,
+    event_id,
+    no_of_students,
+    payment_id
+  } = req.body;
+
+  const connection = await db.getConnection();
+  await connection.beginTransaction();
+
+  try {
+    // ✅ Fetch event and competition names
+    const [[eventRow]] = await connection.query(
+      'SELECT title FROM Events WHERE id = ?',
+      [event_id]
+    );
+    const [[compRow]] = await connection.query(
+      'SELECT name FROM Competitions WHERE id = ?',
+      [competition_id]
+    );
+    
+    const eventName = eventRow?.title || ''; // 🔁 changed from eventRow.name
+    const compName = compRow?.name || '';
+
+    // ✅ Generate event prefix (first 3 capital letters of event name)
+    const eventPrefix = eventName.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
+
+    // ✅ Generate competition initials (first letter of first 3 valid words)
+    const compWords = compName.split(' ').filter(w => /^[a-zA-Z]/.test(w));
+    const compPrefix = compWords.slice(0, 3).map(w => w[0].toUpperCase()).join('');
+
+    // ✅ Get the current team count for the same event and competition
+    const [[{ count }]] = await connection.query(
+      'SELECT COUNT(*) AS count FROM registration WHERE event_id = ? AND competition_id = ?',
+      [event_id, competition_id]
+    );
+
+    const teamNumber = count + 1;
+    const team_code = `WS/${eventPrefix}/${compPrefix}-${teamNumber}`;
+
+    // ✅ Generate participant IDs
+    const participant_id = member_names.map(
+      (_, i) => `${team_code}-P${(i + 1).toString().padStart(2, "0")}`
+    );
+
+    // ✅ Insert registration
+    await connection.query(
+      `INSERT INTO registration (
+        competition_id, event_id, team_code, team_name,
+        coach_mentor_name, coach_mentor_organization,
+        coach_mentor_phone, coach_mentor_email,
+        member_names, member_ages, member_emails,
+        member_phones, member_states, member_cities,
+        member_zipcodes, member_institutions,
+        no_of_students, participant_id, status, payment_status, payment_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)`,
+      [
+        competition_id,
+        event_id,
+        team_code,
+        team_name,
+        coach_mentor_name,
+        coach_mentor_organization,
+        coach_mentor_phone,
+        coach_mentor_email,
+        JSON.stringify(member_names),
+        JSON.stringify(member_ages),
+        JSON.stringify(member_emails),
+        JSON.stringify(member_phones),
+        JSON.stringify(member_states),
+        JSON.stringify(member_cities),
+        JSON.stringify(member_zipcodes),
+        JSON.stringify(member_institutions),
+        no_of_students,
+        JSON.stringify(participant_id),
+        payment_id
+      ]
+    );
+
+    await connection.commit();
+
+    // ✅ Send emails
     try {
-      // ✅ simplified team_code generation
-      const team_code = generateTeamCode("Event", "Competition", competition_id);
-  
-      const participant_id = member_names.map(
-        (_, i) => `${team_code}-P${i.toString().padStart(2, "0")}`
+      const membersList = member_names.map((name, index) => ({
+        name,
+        email: member_emails[index],
+        participant_id: participant_id[index]
+      }));
+
+      await Promise.all(
+        membersList.map(async (member) => {
+          if (member.email) {
+            await sendParticipantEmail({
+              email: member.email,
+              name: member.name,
+              team_name,
+              team_code,
+              participant_id: member.participant_id,
+              competition_name: compName,
+              event_name: eventName
+            });
+          }
+        })
       );
-  
-      const connection = await db.getConnection();
-      await connection.beginTransaction();
-  
-      try {
-        await connection.query(
-          `INSERT INTO Registrations (
-            competition_id, event_id, team_code, team_name,
-            coach_mentor_name, coach_mentor_organization,
-            coach_mentor_phone, coach_mentor_email,
-            member_names, member_ages, member_emails,
-            member_phones, member_states, member_cities,
-            member_zipcodes, member_institutions,
-            no_of_students, participant_id, status, payment_status, payment_id
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)`,
-          [
-            competition_id,
-            event_id,
-            team_code,
-            team_name,
-            coach_mentor_name,
-            coach_mentor_organization,
-            coach_mentor_phone,
-            coach_mentor_email,
-            JSON.stringify(member_names),
-            JSON.stringify(member_ages),
-            JSON.stringify(member_emails),
-            JSON.stringify(member_phones),
-            JSON.stringify(member_states),
-            JSON.stringify(member_cities),
-            JSON.stringify(member_zipcodes),
-            JSON.stringify(member_institutions),
-            no_of_students,
-            JSON.stringify(participant_id),
-            payment_id
-          ]
-        );
-  
-        await connection.commit();
-  
-        // ✅ still sending emails
-        try {
-          const membersList = member_names.map((name, index) => ({
-            name: name,
-            email: member_emails[index],
-            participant_id: participant_id[index]
-          }));
-  
-          await Promise.all(
-            membersList.map(async (member) => {
-              if (member.email) {
-                await sendParticipantEmail({
-                  email: member.email,
-                  name: member.name,
-                  team_name: team_name,
-                  team_code: team_code,
-                  participant_id: member.participant_id,
-                  competition_name: "Competition",
-                  event_name: "Event"
-                });
-              }
-            })
-          );
-        } catch (emailError) {
-          console.error("Email sending error:", emailError);
-        }
-  
-        res.status(201).json({
-          message: "Registration successful",
-          team_code,
-          participant_id,
-        });
-      } catch (error) {
-        await connection.rollback();
-        throw error;
-      } finally {
-        connection.release();
-      }
-    } catch (error) {
-      console.error("Registration Error:", error);
-      res.status(500).json({
-        message: "Server error",
-        error: error.message,
-      });
+    } catch (emailError) {
+      console.error("Email sending error:", emailError);
     }
-  },
+
+    res.status(201).json({
+      message: "Registration successful",
+      team_code,
+      participant_id,
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error("Registration Error:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  } finally {
+    connection.release();
+  }
+},
   
   
 
@@ -865,4 +890,194 @@ module.exports = {
         .json({ message: "Server error", error: error.message });
     }
   },
+
+  bulkRegisterForCompetition: async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Excel file is required" });
+      }
+  
+      const { competition_id, event_id } = req.body;
+  
+      if (!competition_id || !event_id) {
+        return res.status(400).json({ 
+          message: "competition_id and event_id are required" 
+        });
+      }
+  
+      // Read Excel file
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+  
+      if (!jsonData || jsonData.length === 0) {
+        return res.status(400).json({ message: "Excel file is empty" });
+      }
+  
+      const connection = await db.getConnection();
+      await connection.beginTransaction();
+  
+      const results = [];
+      const errors = [];
+  
+      try {
+        for (let i = 0; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          const rowNumber = i + 2; // +2 because Excel rows start from 1 and we have header
+  
+          try {
+            // Validate required fields
+            const requiredFields = [
+              'team_name', 'coach_mentor_name', 'coach_mentor_organization',
+              'coach_mentor_phone', 'coach_mentor_email', 'no_of_students'
+            ];
+  
+            for (const field of requiredFields) {
+              if (!row[field]) {
+                throw new Error(`${field} is required`);
+              }
+            }
+  
+            // Parse member data
+            const memberNames = [];
+            const memberAges = [];
+            const memberEmails = [];
+            const memberPhones = [];
+            const memberStates = [];
+            const memberCities = [];
+            const memberZipcodes = [];
+            const memberInstitutions = [];
+  
+            const noOfStudents = parseInt(row.no_of_students);
+            
+            for (let j = 1; j <= noOfStudents; j++) {
+              const name = row[`member_${j}_name`];
+              const age = row[`member_${j}_age`];
+              const email = row[`member_${j}_email`];
+              const phone = row[`member_${j}_phone`];
+              const state = row[`member_${j}_state`];
+              const city = row[`member_${j}_city`];
+              const zipcode = row[`member_${j}_zipcode`];
+              const institution = row[`member_${j}_institution`];
+  
+              memberNames.push(name);
+              memberAges.push(parseInt(age));
+              memberEmails.push(email);
+              memberPhones.push(phone || '');
+              memberStates.push(state || '');
+              memberCities.push(city || '');
+              memberZipcodes.push(zipcode || '');
+              memberInstitutions.push(institution || '');
+            }
+  
+            // Generate team code and participant IDs
+            const team_code = generateTeamCode("Event", "Competition", competition_id);
+            const participant_id = memberNames.map(
+              (_, idx) => `${team_code}-P${idx.toString().padStart(2, "0")}`
+            );
+  
+            // Insert registration
+            await connection.query(
+              `INSERT INTO Registrations (
+                competition_id, event_id, team_code, team_name,
+                coach_mentor_name, coach_mentor_organization,
+                coach_mentor_phone, coach_mentor_email,
+                member_names, member_ages, member_emails,
+                member_phones, member_states, member_cities,
+                member_zipcodes, member_institutions,
+                no_of_students, participant_id, status, payment_status
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')`,
+              [
+                competition_id,
+                event_id,
+                team_code,
+                row.team_name,
+                row.coach_mentor_name,
+                row.coach_mentor_organization,
+                row.coach_mentor_phone,
+                row.coach_mentor_email,
+                JSON.stringify(memberNames),
+                JSON.stringify(memberAges),
+                JSON.stringify(memberEmails),
+                JSON.stringify(memberPhones),
+                JSON.stringify(memberStates),
+                JSON.stringify(memberCities),
+                JSON.stringify(memberZipcodes),
+                JSON.stringify(memberInstitutions),
+                noOfStudents,
+                JSON.stringify(participant_id),
+                row.payment_id || null
+              ]
+            );
+  
+            results.push({
+              row: rowNumber,
+              team_name: row.team_name,
+              team_code: team_code,
+              status: 'success'
+            });
+  
+            // Send emails (optional - you can comment this out for bulk operations)
+            try {
+              const membersList = memberNames.map((name, index) => ({
+                name: name,
+                email: memberEmails[index],
+                participant_id: participant_id[index]
+              }));
+  
+              await Promise.all(
+                membersList.map(async (member) => {
+                  if (member.email) {
+                    await sendParticipantEmail({
+                      email: member.email,
+                      name: member.name,
+                      team_name: row.team_name,
+                      team_code: team_code,
+                      participant_id: member.participant_id,
+                      competition_name: "Competition",
+                      event_name: "Event"
+                    });
+                  }
+                })
+              );
+            } catch (emailError) {
+              console.error("Email sending error for team:", row.team_name, emailError);
+            }
+  
+          } catch (rowError) {
+            errors.push({
+              row: rowNumber,
+              team_name: row.team_name || 'Unknown',
+              error: rowError.message
+            });
+          }
+        }
+  
+        await connection.commit();
+  
+        res.status(201).json({
+          message: "Bulk registration completed",
+          total_processed: jsonData.length,
+          successful: results.length,
+          failed: errors.length,
+          results: results,
+          errors: errors
+        });
+  
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+  
+    } catch (error) {
+      console.error("Bulk Registration Error:", error);
+      res.status(500).json({
+        message: "Server error",
+        error: error.message
+      });
+    }
+  }
 };

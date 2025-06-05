@@ -4,7 +4,8 @@ const { body } = require('express-validator');
 const { auth } = require('../middleware/auth');
 const competitionController = require('../controller/competitionController');
 const upload = require('../config/s3');
-
+const multer = require('multer');
+const uploads = multer({ storage: multer.memoryStorage() });
 router.get('/', competitionController.getCompetitions);
 router.get('/all', competitionController.getCompetitionsAll);
 router.post('/delete', competitionController.toggleCompetitionIsDeleted); // Route to get all competitions.  Example curl -X GET "http://localhost:3000/api/competitions/all?event_id=123"
@@ -43,5 +44,11 @@ router.post('/send-certificates', [
 router.post('/sent-team-certificates', auth, competitionController.sendTeamCertificates);
 
 router.post('/resend-email', competitionController.resendEventPassEmail);
+
+// Add multer for file upload
+
+
+router.post('/bulk-register', uploads.single('excel'), competitionController.bulkRegisterForCompetition);
+
 
 module.exports = router;
