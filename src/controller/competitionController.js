@@ -287,7 +287,7 @@ module.exports = {
 
     // ✅ Insert registration
     await connection.query(
-      `INSERT INTO registration (
+      `INSERT INTO Registrations (
         competition_id, event_id, team_code, team_name,
         coach_mentor_name, coach_mentor_organization,
         coach_mentor_phone, coach_mentor_email,
