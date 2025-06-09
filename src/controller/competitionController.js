@@ -890,7 +890,6 @@ module.exports = {
         .json({ message: "Server error", error: error.message });
     }
   },
-
   bulkRegisterForCompetition: async (req, res) => {
     try {
       if (!req.file) {
@@ -922,6 +921,33 @@ module.exports = {
       const errors = [];
   
       try {
+        // Fetch event and competition names once for all registrations
+        const [[eventRow]] = await connection.query(
+          'SELECT title FROM Events WHERE id = ?',
+          [event_id]
+        );
+        const [[compRow]] = await connection.query(
+          'SELECT name FROM Competitions WHERE id = ?',
+          [competition_id]
+        );
+        
+        const eventName = eventRow?.title || '';
+        const compName = compRow?.name || '';
+
+        // Generate event prefix (first 3 capital letters of event name)
+        const eventPrefix = eventName.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
+
+        // Generate competition initials (first letter of first 3 valid words)
+        const compWords = compName.split(' ').filter(w => /^[a-zA-Z]/.test(w));
+        const compPrefix = compWords.slice(0, 3).map(w => w[0].toUpperCase()).join('');
+
+        // Get the current team count for the same event and competition before starting bulk inserts
+        const [[{ count: initialTeamCount }]] = await connection.query(
+          'SELECT COUNT(*) AS count FROM Registrations WHERE event_id = ? AND competition_id = ?',
+          [event_id, competition_id]
+        );
+        let currentTeamNumber = initialTeamCount + 1; // Start numbering from the next available team number
+
         for (let i = 0; i < jsonData.length; i++) {
           const row = jsonData[i];
           const rowNumber = i + 2; // +2 because Excel rows start from 1 and we have header
@@ -951,6 +977,10 @@ module.exports = {
   
             const noOfStudents = parseInt(row.no_of_students);
             
+            if (isNaN(noOfStudents) || noOfStudents <= 0) {
+              throw new Error("no_of_students must be a positive number");
+            }
+
             for (let j = 1; j <= noOfStudents; j++) {
               const name = row[`member_${j}_name`];
               const age = row[`member_${j}_age`];
@@ -961,6 +991,11 @@ module.exports = {
               const zipcode = row[`member_${j}_zipcode`];
               const institution = row[`member_${j}_institution`];
   
+              // Basic validation for member fields
+              if (!name || !age || !email) {
+                throw new Error(`Member ${j} name, age, and email are required`);
+              }
+
               memberNames.push(name);
               memberAges.push(parseInt(age));
               memberEmails.push(email);
@@ -971,10 +1006,12 @@ module.exports = {
               memberInstitutions.push(institution || '');
             }
   
-            // Generate team code and participant IDs
-            const team_code = generateTeamCode("Event", "Competition", competition_id);
+            // Generate team code using the fetched prefixes and current team number
+            const team_code = `WS/${eventPrefix}/${compPrefix}-${currentTeamNumber}`;
+            
+            // Generate participant IDs
             const participant_id = memberNames.map(
-              (_, idx) => `${team_code}-P${idx.toString().padStart(2, "0")}`
+              (_, idx) => `${team_code}-P${(idx + 1).toString().padStart(2, "0")}`
             );
   
             // Insert registration
@@ -986,8 +1023,8 @@ module.exports = {
                 member_names, member_ages, member_emails,
                 member_phones, member_states, member_cities,
                 member_zipcodes, member_institutions,
-                no_of_students, participant_id, status, payment_status
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')`,
+                no_of_students, participant_id, status, payment_status, payment_id
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)`,
               [
                 competition_id,
                 event_id,
@@ -1010,7 +1047,10 @@ module.exports = {
                 row.payment_id || null
               ]
             );
-  
+            
+            // Increment team number for the next registration in the bulk upload
+            currentTeamNumber++;
+
             results.push({
               row: rowNumber,
               team_name: row.team_name,
@@ -1035,8 +1075,8 @@ module.exports = {
                       team_name: row.team_name,
                       team_code: team_code,
                       participant_id: member.participant_id,
-                      competition_name: "Competition",
-                      event_name: "Event"
+                      competition_name: compName, // Use actual competition name
+                      event_name: eventName // Use actual event name
                     });
                   }
                 })
