@@ -6,8 +6,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: 'competitionswsro@gmail.com',
-    pass: 'hxvg uavf bybs rczm'
+    user: 'binarysolutions0000@gmail.com',
+    pass: 'bekr rmpn lyye tuyf'
   },
   tls: {
     rejectUnauthorized: false
@@ -37,7 +37,7 @@ const sendParticipantEmail = async ({ email, name, team_name, team_code, partici
   });
 
   const mailOptions = {
-    from: 'competitionswsro@gmail.com',
+    from: 'binarysolutions0000@gmail.com',
     to: email,
     subject: `🎉 Your Event Pass for ${competition_name}`,
     html: `
@@ -132,7 +132,7 @@ const sendTeamSummaryEmail = async ({ email, team_name, team_code, competition_n
     .join('');
 
   const mailOptions = {
-    from: 'competitionswsro@gmail.com',
+    from: 'binarysolutions0000@gmail.com',
     to: email,
     subject: `🎉 Team Registration Summary for ${competition_name}`,
     html: `
