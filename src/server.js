@@ -15,6 +15,12 @@ const inquiryRoutes = require('./routes/inquiry');
 const razorpay = require('./Razorpay');
 
 const app = express();
+const puppeteer = require('puppeteer');
+
+const browser = await puppeteer.launch({
+  executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/opt/render/.cache/puppeteer/chrome/linux-137.0.7151.70/chrome-linux64/chrome',
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+});
 
 // Middleware
 app.use(cors());

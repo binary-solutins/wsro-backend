@@ -6,6 +6,13 @@ const competitionController = require('../controller/competitionController');
 const upload = require('../config/s3');
 const multer = require('multer');
 const uploads = multer({ storage: multer.memoryStorage() });
+const puppeteer = require('puppeteer');
+
+const browser = await puppeteer.launch({
+  executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/opt/render/.cache/puppeteer/chrome/linux-137.0.7151.70/chrome-linux64/chrome',
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+});
+
 router.get('/', competitionController.getCompetitions);
 router.get('/all', competitionController.getCompetitionsAll);
 router.post('/delete', competitionController.toggleCompetitionIsDeleted); // Route to get all competitions.  Example curl -X GET "http://localhost:3000/api/competitions/all?event_id=123"

@@ -10,6 +10,12 @@ const XLSX = require('xlsx');
 const upload = require("../config/s3");
 const { sendRegistrationEmail, sendParticipantEmail, sendTeamSummaryEmail } = require("../../utils/emailService");
 const fs = require("fs").promises;
+const puppeteer = require('puppeteer');
+
+const browser = await puppeteer.launch({
+  executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/opt/render/.cache/puppeteer/chrome/linux-137.0.7151.70/chrome-linux64/chrome',
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+});
 
 function generateCertificateHTML(registration) {
   const currentDate = new Date().toLocaleDateString('en-US', {
