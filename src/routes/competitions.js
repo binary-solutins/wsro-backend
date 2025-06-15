@@ -6,12 +6,6 @@ const competitionController = require('../controller/competitionController');
 const upload = require('../config/s3');
 const multer = require('multer');
 const uploads = multer({ storage: multer.memoryStorage() });
-const puppeteer = require('puppeteer');
-
-const browser = await puppeteer.launch({
-  executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/opt/render/.cache/puppeteer/chrome/linux-137.0.7151.70/chrome-linux64/chrome',
-  args: ['--no-sandbox', '--disable-setuid-sandbox'],
-});
 
 router.get('/', competitionController.getCompetitions);
 router.get('/all', competitionController.getCompetitionsAll);
