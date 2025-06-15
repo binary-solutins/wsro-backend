@@ -1651,5 +1651,193 @@ getCertificateDownloadUrl: async (req, res) => {
         error: error.message
       });
     }
+  },
+
+  generateAllIranCertificatesWithAppwriteZip: async (req, res) => {
+    try {
+      // Optional filters from query parameters
+      const { 
+        limit = null, 
+        search = null, 
+        certificate_ids = null 
+      } = req.query;
+  
+      // Build query (same as above method)
+      let query = `SELECT * FROM iran_registrations`;
+      let params = [];
+      let conditions = [];
+  
+      if (search) {
+        conditions.push(`(
+          full_name LIKE ? OR 
+          school_institute LIKE ? OR 
+          course_name_competition_category LIKE ? OR 
+          certificate_u_id LIKE ?
+        )`);
+        const searchTerm = `%${search}%`;
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      }
+  
+      if (certificate_ids) {
+        const ids = certificate_ids.split(',').map(id => id.trim());
+        const placeholders = ids.map(() => '?').join(',');
+        conditions.push(`certificate_u_id IN (${placeholders})`);
+        params.push(...ids);
+      }
+  
+      if (conditions.length > 0) {
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+  
+      query += ` ORDER BY id DESC`;
+  
+      if (limit && !isNaN(parseInt(limit))) {
+        query += ` LIMIT ?`;
+        params.push(parseInt(limit));
+      }
+  
+      const [registrations] = await db.query(query, params);
+  
+      if (registrations.length === 0) {
+        return res.status(404).json({ 
+          message: "No registrations found matching the criteria" 
+        });
+      }
+  
+      // Set response headers for ZIP download
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="iran_certificates_with_urls_${new Date().getTime()}.zip"`);
+  
+      // Create ZIP archive
+      const archive = archiver('zip', {
+        zlib: { level: 9 }
+      });
+  
+      archive.on('error', (err) => {
+        console.error('Archive error:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ message: 'Error creating ZIP file', error: err.message });
+        }
+      });
+  
+      archive.pipe(res);
+  
+      const results = {
+        total: registrations.length,
+        successful: 0,
+        failed: 0,
+        errors: [],
+        uploadedUrls: []
+      };
+  
+      // Process each registration
+      for (let i = 0; i < registrations.length; i++) {
+        const registration = registrations[i];
+        
+        try {
+          const certificateHtml = generateCertificateHTML(registration);
+  
+          const options = {
+            format: 'A4',
+            printBackground: true,
+            margin: {
+              top: '0mm',
+              right: '0mm',
+              bottom: '0mm',
+              left: '0mm'
+            },
+            width: '210mm',
+            height: '297mm',
+            preferCSSPageSize: true,
+            displayHeaderFooter: false
+          };
+          
+          const pdfBuffer = await htmlToPdf.generatePdf(
+            { content: certificateHtml }, 
+            options
+          );
+  
+          const sanitizedName = registration.full_name.replace(/[^a-zA-Z0-9]/g, '_');
+          const fileName = `${sanitizedName}_${registration.certificate_u_id}.pdf`;
+  
+          // Upload to Appwrite
+          const uploadResult = await uploadCertificateToAppwrite(
+            pdfBuffer, 
+            fileName, 
+            registration.certificate_u_id
+          );
+  
+          if (uploadResult.success) {
+            // Update database with certificate URL
+            await db.query(
+              `UPDATE iran_registrations 
+               SET certificate_url = ?, certificate_generated_at = NOW() 
+               WHERE certificate_u_id = ?`,
+              [uploadResult.url, registration.certificate_u_id]
+            );
+  
+            results.uploadedUrls.push({
+              certificate_id: registration.certificate_u_id,
+              full_name: registration.full_name,
+              url: uploadResult.url
+            });
+  
+            // Add PDF to ZIP
+            archive.append(pdfBuffer, { name: fileName });
+          } else {
+            throw new Error(`Appwrite upload failed: ${uploadResult.error}`);
+          }
+  
+          results.successful++;
+  
+        } catch (error) {
+          console.error(`Error processing certificate ${registration.certificate_u_id}:`, error);
+          
+          results.failed++;
+          results.errors.push({
+            certificate_id: registration.certificate_u_id,
+            full_name: registration.full_name,
+            error: error.message
+          });
+  
+          const errorInfo = `Error generating certificate for ${registration.full_name} (${registration.certificate_u_id}): ${error.message}`;
+          archive.append(errorInfo, { name: `ERROR_${registration.certificate_u_id}.txt` });
+        }
+      }
+  
+      // Add comprehensive summary with URLs
+      const summaryContent = `
+  Certificate Generation & Upload Summary
+  ======================================
+  Generated on: ${new Date().toISOString()}
+  Total registrations processed: ${results.total}
+  Successful generations: ${results.successful}
+  Failed generations: ${results.failed}
+  
+  Successfully Uploaded Certificates:
+  ${results.uploadedUrls.map(item => `- ${item.certificate_id} (${item.full_name}): ${item.url}`).join('\n')}
+  
+  ${results.errors.length > 0 ? `
+  Errors:
+  ${results.errors.map(err => `- ${err.certificate_id} (${err.full_name}): ${err.error}`).join('\n')}
+  ` : ''}
+  `;
+  
+      archive.append(summaryContent, { name: 'GENERATION_AND_UPLOAD_SUMMARY.txt' });
+  
+      await archive.finalize();
+  
+      console.log(`ZIP with Appwrite upload completed. Successful: ${results.successful}, Failed: ${results.failed}`);
+  
+    } catch (error) {
+      console.error("Bulk Certificate ZIP with Appwrite Generation Error:", error);
+      
+      if (!res.headersSent) {
+        res.status(500).json({
+          message: "Server error during bulk certificate generation with upload",
+          error: error.message
+        });
+      }
+    }
   }
 };

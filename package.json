@@ -10,6 +10,7 @@
     "postinstall": "npx puppeteer browsers install chrome"
   },
   "dependencies": {
+    "archiver": "^7.0.1",
     "aws-sdk": "2.1692.0",
     "axios": "^1.10.0",
     "bcryptjs": "^2.4.3",
@@ -30,6 +31,7 @@
     "puppeteer": "^24.10.1",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.5",
+    "stream": "^0.0.3",
     "stripe": "^14.8.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
