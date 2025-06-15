@@ -8,6 +8,7 @@ const {
 } = require("../../utils/certificateService");
 const XLSX = require('xlsx');
 const upload = require("../config/s3");
+const path = require('path');
 const { sendRegistrationEmail, sendParticipantEmail, sendTeamSummaryEmail } = require("../../utils/emailService");
 const fs = require("fs").promises;
 const axios = require('axios'); // Add axios for HTTP requests
@@ -84,190 +85,265 @@ function generateCertificateHTML(registration) {
     month: 'long',
     day: 'numeric'
   });
+  const imagePaths = {
+    logo: path.join(__dirname, '../../assets/images/logo.png'),
+    bag: path.join(__dirname, '../../assets/images/bag.png'),
+    sign: path.join(__dirname, '../../assets/images/sign.png'),
+    triangle: path.join(__dirname, '../../assets/images/tringle.png'),
+    sponsor: path.join(__dirname, '../../assets/images/sponsor.png')
+  };
 
+  // Convert paths to file:// URLs for html-pdf-node
+  const imageUrls = {};
+  for (const [key, imagePath] of Object.entries(imagePaths)) {
+    imageUrls[key] = `file://${imagePath.replace(/\\/g, '/')}`;
+  }
   return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Certificate - ${registration.certificate_u_id}</title>
-        <style>
-            body {
-                font-family: 'Times New Roman', serif;
-                margin: 0;
-                padding: 40px;
-                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .certificate {
-                background: white;
-                padding: 60px;
-                border: 8px solid #2c5aa0;
-                border-radius: 20px;
-                box-shadow: 0 0 30px rgba(0,0,0,0.1);
-                text-align: center;
-                max-width: 800px;
-                width: 100%;
-                position: relative;
-            }
-            .certificate::before {
-                content: '';
-                position: absolute;
-                top: 20px;
-                left: 20px;
-                right: 20px;
-                bottom: 20px;
-                border: 2px solid #gold;
-                border-radius: 10px;
-            }
-            .header {
-                margin-bottom: 40px;
-            }
-            .title {
-                font-size: 48px;
-                font-weight: bold;
-                color: #2c5aa0;
-                margin-bottom: 10px;
-                text-transform: uppercase;
-                letter-spacing: 3px;
-            }
-            .subtitle {
-                font-size: 24px;
-                color: #666;
-                margin-bottom: 30px;
-            }
-            .recipient {
-                font-size: 36px;
-                font-weight: bold;
-                color: #333;
-                margin: 30px 0;
-                padding: 20px;
-                border-bottom: 3px solid #2c5aa0;
-                display: inline-block;
-            }
-            .details {
-                margin: 30px 0;
-                font-size: 18px;
-                line-height: 1.8;
-                color: #555;
-            }
-            .detail-row {
-                margin: 15px 0;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 0;
-            }
-            .detail-label {
-                font-weight: bold;
-                color: #2c5aa0;
-                flex: 1;
-                text-align: left;
-            }
-            .detail-value {
-                flex: 2;
-                text-align: left;
-                padding-left: 20px;
-            }
-            .certificate-id {
-                position: absolute;
-                top: 30px;
-                right: 30px;
-                font-size: 14px;
-                color: #666;
-                font-weight: bold;
-            }
-            .date {
-                margin-top: 40px;
-                font-size: 16px;
-                color: #666;
-            }
-            .signature-section {
-                margin-top: 60px;
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-end;
-            }
-            .signature {
-                text-align: center;
-                border-top: 2px solid #333;
-                padding-top: 10px;
-                width: 200px;
-                font-size: 14px;
-                color: #666;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="certificate">
-            <div class="certificate-id">${registration.certificate_u_id}</div>
-            
-            <div class="header">
-                <div class="title">Certificate of Achievement</div>
-                <div class="subtitle">Iran Competition</div>
-            </div>
-
-            <div style="font-size: 20px; margin: 20px 0;">This is to certify that</div>
-            
-            <div class="recipient">${registration.full_name}</div>
-
-            <div class="details">
-                ${registration.school_institute ? `
-                <div class="detail-row">
-                    <div class="detail-label">Institution:</div>
-                    <div class="detail-value">${registration.school_institute}</div>
-                </div>` : ''}
-                
-                ${registration.age ? `
-                <div class="detail-row">
-                    <div class="detail-label">Age:</div>
-                    <div class="detail-value">${registration.age} years</div>
-                </div>` : ''}
-                
-                ${registration.course_name_competition_category ? `
-                <div class="detail-row">
-                    <div class="detail-label">Category:</div>
-                    <div class="detail-value">${registration.course_name_competition_category}</div>
-                </div>` : ''}
-                
-                ${registration.grade_or_winning_rank ? `
-                <div class="detail-row">
-                    <div class="detail-label">Achievement:</div>
-                    <div class="detail-value">${registration.grade_or_winning_rank}</div>
-                </div>` : ''}
-                
-                ${registration.venue ? `
-                <div class="detail-row">
-                    <div class="detail-label">Venue:</div>
-                    <div class="detail-value">${registration.venue}</div>
-                </div>` : ''}
-                
-                ${registration.dob ? `
-                <div class="detail-row">
-                    <div class="detail-label">Date of Birth:</div>
-                    <div class="detail-value">${registration.dob}</div>
-                </div>` : ''}
-            </div>
-
-            <div class="date">
-                Issued on: ${currentDate}
-            </div>
-
-            <div class="signature-section">
-                <div class="signature">
-                    Authorized Signature
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate - ${registration.certificate_u_id}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', serif;
+            background: white;
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            padding: 0;
+            position: relative;
+     
+        }
+        
+        .certificate-container {
+            width: 794px;
+            height: 1123px;
+            margin: 0 auto;
+            background: #731F15;
+            padding: 60px;
+            position: relative;
+      		z-index:1;
+ 
+        }
+        
+        .certificate-border {
+            width: 100%;
+            height: 100%;
+            border: 4px solid white;
+            background: white;
+            position: relative;
+      		
+        }
+        
+        .certificate-inner {
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .wsro-logo-container {
+            margin-bottom: 10px;
+        }
+        
+        .wsro-logo {
+            width: 600px;
+            height: 200px;
+            object-fit: contain;
+        }
+        
+        .certificate-title {
+            font-size: 48px;
+            font-weight:500;
+            color: #333;
+            margin-bottom: 8px;
+            letter-spacing: 4px;
+        }
+        
+        .participation-text {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 6px;
+       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .event-details {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .awarded-text {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .participant-name {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+            padding-bottom: 8px;
+            border-bottom: 2px dashed #731F15;
+           
+        }
+        
+        .content-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+      		margin-bottom:45px;
+      		font-size:18px;
+        }
+        
+        .participation-details {
+            text-align: center;
+            font-size: 18px;
+            color: #333;
+            line-height: 1;
+       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+      
+      
+        .bottom-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0px;
+        }
+        
+        .left-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .uin-text {
+            font-size: 11px;
+            font-weight: bold;
+            color: #731F15;
+       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        
+        .footer-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .footer-left {
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+        }
+        
+        .triangle-image {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+        
+        .footer-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+      
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <div class="certificate-border">
+            <div class="certificate-inner">
+                <!-- Header with WSRO Logo -->
+                <div class="header">
+                    <div class="wsro-logo-container">
+                        <img 
+                            src="${imageUrls.logo}" 
+                            alt="WSRO Logo" 
+                            class="wsro-logo"
+                        />
+                    </div>
+                    
+                    <div class="certificate-title">CERTIFICATE</div>
+                    <div class="participation-text">OF PLACEMENT</div>
+                    <div class="event-details">(WSRO IRAN NATIONAL COMPETITION 2025)</div>
+                    <div class="awarded-text">This certificate is awarded to</div>
+                    
+                    <div class="participant-name">${registration.full_name}</div>
                 </div>
-                <div class="signature">
-                    Director
+                
+                <!-- Main Content -->
+                <div class="content-section">
+                    <div class="participation-details">
+                        for participating in the WSRO IRAN National Competition 2025 on the date<br/>
+                        of <strong>21,22 & 23 May 2025</strong><br/>
+                        At <strong>${registration.school_institute}.</strong>
+                    </div>
+                </div>
+                
+                <!-- Bottom Section -->
+                <div class="bottom-section">
+                    <div class="left-section">
+                        <div class="uin-text">UIN:${registration.certificate_u_id}</div>
+                        <img 
+                            src="${imageUrls.bag}" 
+                            alt="WSRO Award Badge" 
+                            class="award-badge"
+                        />
+                    </div>
+                    
+                    <div class="signature-section">
+                        <img 
+                            src="${imageUrls.sign}" 
+                            alt="Signature" 
+                            class="signature-image"
+                        />
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="footer-section">
+                    <div class="footer-left">
+                        <img 
+                            src="${imageUrls.tringle}" 
+                            alt="Triangle Design" 
+                            class="triangle-image"
+                        />
+                    </div>
+                    
+                    <div class="footer-right">
+                        <img 
+                            src="${imageUrls.sponsor}" 
+                            alt="Chalik.net Logo" 
+                            class="chalik-logo"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
-    </body>
-    </html>
+    </div>
+</body>
+</html>
   `;
 }
 module.exports = {
