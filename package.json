@@ -6,7 +6,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --detectOpenHandles",
-    "build": "npm i"
+    "build": "npm i",
+   "postinstall": "npx puppeteer browsers install chrome"
   },
   "dependencies": {
     "aws-sdk": "2.1692.0",
