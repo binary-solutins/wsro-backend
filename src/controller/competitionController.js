@@ -558,8 +558,6 @@ module.exports = {
   }
 },
   
-  
-
 registerIranCompetition: async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -605,7 +603,6 @@ registerIranCompetition: async (req, res) => {
         age: entry.age || null,
         course_name_competition_category: entry.course_name_competition_category?.trim() || null,
         grade_or_winning_rank: entry.grade_or_winning_rank?.trim() || null,
-        venue: entry.venue?.trim() || null,
         certificate_u_id: `WSROIR/25/PA/${sequenceNumber.toString().padStart(4, '0')}`
       };
     });
@@ -616,7 +613,7 @@ registerIranCompetition: async (req, res) => {
       [newVal]
     );
 
-    // Prepare bulk insert with all fields (allowing nulls)
+    // Prepare bulk insert - matching exact database structure
     const values = entriesWithCertId.map(entry => [
       entry.full_name,
       entry.school_institute,
@@ -624,13 +621,12 @@ registerIranCompetition: async (req, res) => {
       entry.age,
       entry.course_name_competition_category,
       entry.grade_or_winning_rank,
-      entry.venue,
       entry.certificate_u_id
     ]);
 
     await connection.query(
       `INSERT INTO iran_registrations
-      (full_name, school_institute, dob, age, course_name_competition_category, grade_or_winning_rank, venue, certificate_u_id)
+      (full_name, school_institute, dob, age, course_name_competition_category, grade_or_winning_rank, certificate_u_id)
       VALUES ?`,
       [values]
     );
@@ -721,7 +717,6 @@ generateIranCertificates: async (req, res) => {
     });
   }
 },
-
   getIranRegistrationByCertificateId: async (req, res) => {
     const { certificate_u_id } = req.body;
   
