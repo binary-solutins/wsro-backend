@@ -237,23 +237,14 @@ function generateCertificateHTML(registration) {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         
-        .award-badge {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
-        }
-        
+       
         .signature-section {
             display: flex;
             justify-content: center;
             align-items: center;
         }
         
-        .signature-image {
-            width: 150px;
-            height: 100px;
-            object-fit: contain;
-        }
+      
         
         .footer-section {
             display: flex;
@@ -278,11 +269,7 @@ function generateCertificateHTML(registration) {
             align-items: center;
         }
         
-        .chalik-logo {
-            width: 120px;
-            height: 60px;
-            object-fit: contain;
-        }
+       
         
         /* Responsive adjustments for PDF generation */
         @media print {
