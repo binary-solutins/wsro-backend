@@ -111,15 +111,23 @@ function generateCertificateHTML(registration) {
         }
         
         .certificate-container {
-            width: 794px;
-            height: 1123px;
+            width: 894px;
+            height: 1200px;
             margin: 0 auto;
             background: #731F15;
-            padding: 60px;
+            padding: 30px;
             position: relative;
       		z-index:1;
  
         }
+      
+      .border{
+      border: 4px solid white;
+      padding: 30px;
+         width: 840px;
+            height: 1150px;
+      }
+  
         
         .certificate-border {
             width: 100%;
@@ -259,6 +267,7 @@ function generateCertificateHTML(registration) {
 </head>
 <body>
     <div class="certificate-container">
+      <div class="border"> 
         <div class="certificate-border">
             <div class="certificate-inner">
                 <!-- Header with WSRO Logo -->
@@ -327,6 +336,7 @@ function generateCertificateHTML(registration) {
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 </body>
