@@ -10,8 +10,56 @@ const XLSX = require('xlsx');
 const upload = require("../config/s3");
 const { sendRegistrationEmail, sendParticipantEmail, sendTeamSummaryEmail } = require("../../utils/emailService");
 const fs = require("fs").promises;
- // Use html-pdf-node instead of Puppeteer
- const htmlToPdf = require('html-pdf-node');
+const axios = require('axios'); // Add axios for HTTP requests
+const FormData = require('form-data'); // Add form-data for multipart uploads
+const htmlToPdf = require('html-pdf-node');
+const { v4: uuidv4 } = require('uuid');
+// Appwrite configuration
+const APPWRITE_ENDPOINT = 'https://cloud.appwrite.io/v1'; // Replace with your Appwrite endpoint
+const APPWRITE_PROJECT_ID = '67aee32f0028febbce2c'; // Replace with your project ID
+const APPWRITE_BUCKET_ID = '67aee35f000b324ca10c';
+
+async function uploadCertificateToAppwrite(pdfBuffer, fileName, certificateId) {
+  try {
+    // Use certificate ID as file ID or generate a new UUID
+    const fileId = certificateId || uuidv4();
+    
+    const formData = new FormData();
+    formData.append('fileId', fileId);
+    formData.append('file', pdfBuffer, {
+      filename: fileName,
+      contentType: 'application/pdf'
+    });
+
+    const response = await axios.post(
+      `${APPWRITE_ENDPOINT}/storage/buckets/${APPWRITE_BUCKET_ID}/files`,
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+          'X-Appwrite-Project': APPWRITE_PROJECT_ID,
+          // Note: This might work without API key for some operations, or you'll need to set it
+          // 'X-Appwrite-Key': 'your-api-key-here'  // Uncomment and add if needed
+        }
+      }
+    );
+
+    // Return the file URL based on the response
+    const uploadedFile = response.data;
+    return {
+      success: true,
+      fileId: uploadedFile.$id,
+      url: `${APPWRITE_ENDPOINT}/storage/buckets/${APPWRITE_BUCKET_ID}/files/${uploadedFile.$id}/view?project=${APPWRITE_PROJECT_ID}`
+    };
+  } catch (error) {
+    console.error('Appwrite upload error:', error.response?.data || error.message);
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message
+    };
+  }
+}
+
 function generateCertificateHTML(registration) {
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
@@ -204,7 +252,6 @@ function generateCertificateHTML(registration) {
     </html>
   `;
 }
-
 module.exports = {
   getCompetitions: async (req, res) => {
     try {
@@ -653,7 +700,6 @@ registerIranCompetition: async (req, res) => {
   }
 },
 
-// Certificate Generation API
 generateIranCertificates: async (req, res) => {
   const { certificate_ids } = req.body;
 
@@ -674,45 +720,143 @@ generateIranCertificates: async (req, res) => {
     }
 
     const certificates = [];
-
-   
+    const uploadResults = [];
 
     for (const registration of registrations) {
-      // Generate HTML for certificate
-      const certificateHtml = generateCertificateHTML(registration);
-      
-      // PDF generation options
-      const options = {
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20px',
-          right: '20px',
-          bottom: '20px',
-          left: '20px'
+      try {
+        // Generate HTML for certificate
+        const certificateHtml = generateCertificateHTML(registration);
+        
+        // PDF generation options
+        const options = {
+          format: 'A4',
+          printBackground: true,
+          margin: {
+            top: '20px',
+            right: '20px',
+            bottom: '20px',
+            left: '20px'
+          }
+        };
+
+        // Convert HTML to PDF
+        const pdfBuffer = await htmlToPdf.generatePdf(
+          { content: certificateHtml }, 
+          options
+        );
+
+        // Create filename using username (full_name) and certificate ID
+        const sanitizedName = registration.full_name.replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `${sanitizedName}_${registration.certificate_u_id}.pdf`;
+
+        // Upload to Appwrite
+        const uploadResult = await uploadCertificateToAppwrite(
+          pdfBuffer, 
+          fileName, 
+          registration.certificate_u_id
+        );
+
+        if (uploadResult.success) {
+          // Update database with certificate URL
+          await db.query(
+            `UPDATE iran_registrations SET certificate_url = ? WHERE certificate_u_id = ?`,
+            [uploadResult.url, registration.certificate_u_id]
+          );
+
+          certificates.push({
+            certificate_id: registration.certificate_u_id,
+            full_name: registration.full_name,
+            certificate_url: uploadResult.url,
+            file_id: uploadResult.fileId,
+            upload_status: 'success'
+          });
+
+          uploadResults.push({
+            certificate_id: registration.certificate_u_id,
+            status: 'success',
+            url: uploadResult.url
+          });
+        } else {
+          // If upload fails, still return the certificate data but mark upload as failed
+          certificates.push({
+            certificate_id: registration.certificate_u_id,
+            full_name: registration.full_name,
+            pdf: pdfBuffer.toString('base64'), // Fallback to base64
+            upload_status: 'failed',
+            upload_error: uploadResult.error
+          });
+
+          uploadResults.push({
+            certificate_id: registration.certificate_u_id,
+            status: 'failed',
+            error: uploadResult.error
+          });
         }
-      };
+      } catch (error) {
+        console.error(`Error processing certificate ${registration.certificate_u_id}:`, error);
+        certificates.push({
+          certificate_id: registration.certificate_u_id,
+          full_name: registration.full_name,
+          upload_status: 'error',
+          error: error.message
+        });
 
-      // Convert HTML to PDF
-      const pdfBuffer = await htmlToPdf.generatePdf(
-        { content: certificateHtml }, 
-        options
-      );
-
-      certificates.push({
-        certificate_id: registration.certificate_u_id,
-        full_name: registration.full_name,
-        pdf: pdfBuffer.toString('base64') // Return as base64 string
-      });
+        uploadResults.push({
+          certificate_id: registration.certificate_u_id,
+          status: 'error',
+          error: error.message
+        });
+      }
     }
 
     res.status(200).json({
-      message: "Certificates generated successfully",
-      certificates: certificates
+      message: "Certificates generated and upload attempted",
+      total_processed: certificate_ids.length,
+      successful_uploads: uploadResults.filter(r => r.status === 'success').length,
+      failed_uploads: uploadResults.filter(r => r.status !== 'success').length,
+      certificates: certificates,
+      upload_summary: uploadResults
     });
 
   } catch (error) {
     console.error("Certificate Generation Error:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
+  }
+},
+
+// New method to get certificate download URL from Appwrite
+getCertificateDownloadUrl: async (req, res) => {
+  const { certificate_u_id } = req.params;
+
+  if (!certificate_u_id) {
+    return res.status(400).json({ message: "Certificate ID is required" });
+  }
+
+  try {
+    const [result] = await db.query(
+      `SELECT certificate_url, full_name FROM iran_registrations WHERE certificate_u_id = ?`,
+      [certificate_u_id]
+    );
+
+    if (!result || result.length === 0) {
+      return res.status(404).json({ message: "Certificate not found" });
+    }
+
+    if (!result[0].certificate_url) {
+      return res.status(404).json({ message: "Certificate not yet uploaded" });
+    }
+
+    res.status(200).json({
+      message: "Certificate URL retrieved successfully",
+      certificate_id: certificate_u_id,
+      full_name: result[0].full_name,
+      download_url: result[0].certificate_url
+    });
+  } catch (error) {
+    console.error("Error fetching certificate URL:", error);
     res.status(500).json({
       message: "Server error",
       error: error.message
