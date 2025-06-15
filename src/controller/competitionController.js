@@ -1770,13 +1770,7 @@ getCertificateDownloadUrl: async (req, res) => {
           );
   
           if (uploadResult.success) {
-            // Update database with certificate URL
-            await db.query(
-              `UPDATE iran_registrations 
-               SET certificate_url = ?, certificate_generated_at = NOW() 
-               WHERE certificate_u_id = ?`,
-              [uploadResult.url, registration.certificate_u_id]
-            );
+           
   
             results.uploadedUrls.push({
               certificate_id: registration.certificate_u_id,
