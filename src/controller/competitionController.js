@@ -85,19 +85,50 @@ function generateCertificateHTML(registration) {
     month: 'long',
     day: 'numeric'
   });
+
+  // Convert images to base64 data URLs
+  const fs = require('fs');
   const imagePaths = {
-    logo: path.join(__dirname, '../assets/images/logo.png'),
-    bag: path.join(__dirname, '../assets/images/bag.png'),
-    sign: path.join(__dirname, '../assets/images/sign.png'),
-    triangle: path.join(__dirname, '../assets/images/tringle.png'),
-    sponsor: path.join(__dirname, '../assets/images/sponsor.png')
+    logo: path.join(__dirname, '../../assets/images/logo.png'),
+    bag: path.join(__dirname, '../../assets/images/bag.png'),
+    sign: path.join(__dirname, '../../assets/images/sign.png'),
+    triangle: path.join(__dirname, '../../assets/images/tringle.png'),
+    sponsor: path.join(__dirname, '../../assets/images/sponsor.png')
   };
 
-  // Convert paths to file:// URLs for html-pdf-node
-  const imageUrls = {};
-  for (const [key, imagePath] of Object.entries(imagePaths)) {
-    imageUrls[key] = `file://${imagePath.replace(/\\/g, '/')}`;
+  // Convert images to base64 data URLs
+  const imageDataUrls = {};
+  try {
+    for (const [key, imagePath] of Object.entries(imagePaths)) {
+      if (fs.existsSync(imagePath)) {
+        const imageBuffer = fs.readFileSync(imagePath);
+        const base64Image = imageBuffer.toString('base64');
+        const ext = path.extname(imagePath).toLowerCase();
+        let mimeType = 'image/png'; // default
+        
+        if (ext === '.jpg' || ext === '.jpeg') {
+          mimeType = 'image/jpeg';
+        } else if (ext === '.gif') {
+          mimeType = 'image/gif';
+        } else if (ext === '.svg') {
+          mimeType = 'image/svg+xml';
+        }
+        
+        imageDataUrls[key] = `data:${mimeType};base64,${base64Image}`;
+      } else {
+        console.warn(`Image not found: ${imagePath}`);
+        // Provide a placeholder or skip the image
+        imageDataUrls[key] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='; // 1x1 transparent pixel
+      }
+    }
+  } catch (error) {
+    console.error('Error reading images:', error);
+    // Fallback: use placeholder for all images
+    Object.keys(imagePaths).forEach(key => {
+      imageDataUrls[key] = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    });
   }
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -120,7 +151,6 @@ function generateCertificateHTML(registration) {
             margin: 0 auto;
             padding: 0;
             position: relative;
-     
         }
         
         .certificate-container {
@@ -130,8 +160,7 @@ function generateCertificateHTML(registration) {
             background: #731F15;
             padding: 60px;
             position: relative;
-      		z-index:1;
- 
+            z-index: 1;
         }
         
         .certificate-border {
@@ -140,7 +169,6 @@ function generateCertificateHTML(registration) {
             border: 4px solid white;
             background: white;
             position: relative;
-      		
         }
         
         .certificate-inner {
@@ -169,7 +197,7 @@ function generateCertificateHTML(registration) {
         
         .certificate-title {
             font-size: 48px;
-            font-weight:500;
+            font-weight: 500;
             color: #333;
             margin-bottom: 8px;
             letter-spacing: 4px;
@@ -179,14 +207,14 @@ function generateCertificateHTML(registration) {
             font-size: 18px;
             color: #666;
             margin-bottom: 6px;
-       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         
         .event-details {
             font-size: 16px;
             color: #333;
             margin-bottom: 20px;
-       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         
         .awarded-text {
@@ -201,26 +229,24 @@ function generateCertificateHTML(registration) {
             color: #333;
             padding-bottom: 8px;
             border-bottom: 2px dashed #731F15;
-           
         }
         
         .content-section {
             display: flex;
             flex-direction: column;
             justify-content: center;
-      		margin-bottom:45px;
-      		font-size:18px;
+            margin-bottom: 45px;
+            font-size: 18px;
         }
         
         .participation-details {
             text-align: center;
             font-size: 18px;
             color: #333;
-            line-height: 1;
-       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-      
-      
+        
         .bottom-section {
             display: flex;
             justify-content: space-between;
@@ -239,9 +265,8 @@ function generateCertificateHTML(registration) {
             font-size: 11px;
             font-weight: bold;
             color: #731F15;
-       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-        
         
         .footer-section {
             display: flex;
@@ -267,7 +292,23 @@ function generateCertificateHTML(registration) {
             gap: 15px;
         }
         
-      
+        .award-badge {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+        
+        .signature-image {
+            width: 150px;
+            height: 80px;
+            object-fit: contain;
+        }
+        
+        .chalik-logo {
+            width: 120px;
+            height: 60px;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
@@ -278,7 +319,7 @@ function generateCertificateHTML(registration) {
                 <div class="header">
                     <div class="wsro-logo-container">
                         <img 
-                            src="${imageUrls.logo}" 
+                            src="${imageDataUrls.logo}" 
                             alt="WSRO Logo" 
                             class="wsro-logo"
                         />
@@ -304,9 +345,9 @@ function generateCertificateHTML(registration) {
                 <!-- Bottom Section -->
                 <div class="bottom-section">
                     <div class="left-section">
-                        <div class="uin-text">UIN:${registration.certificate_u_id}</div>
+                        <div class="uin-text">UIN: ${registration.certificate_u_id}</div>
                         <img 
-                            src="${imageUrls.bag}" 
+                            src="${imageDataUrls.bag}" 
                             alt="WSRO Award Badge" 
                             class="award-badge"
                         />
@@ -314,7 +355,7 @@ function generateCertificateHTML(registration) {
                     
                     <div class="signature-section">
                         <img 
-                            src="${imageUrls.sign}" 
+                            src="${imageDataUrls.sign}" 
                             alt="Signature" 
                             class="signature-image"
                         />
@@ -325,7 +366,7 @@ function generateCertificateHTML(registration) {
                 <div class="footer-section">
                     <div class="footer-left">
                         <img 
-                            src="${imageUrls.tringle}" 
+                            src="${imageDataUrls.triangle}" 
                             alt="Triangle Design" 
                             class="triangle-image"
                         />
@@ -333,7 +374,7 @@ function generateCertificateHTML(registration) {
                     
                     <div class="footer-right">
                         <img 
-                            src="${imageUrls.sponsor}" 
+                            src="${imageDataUrls.sponsor}" 
                             alt="Chalik.net Logo" 
                             class="chalik-logo"
                         />
