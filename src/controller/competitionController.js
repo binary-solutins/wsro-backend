@@ -1657,14 +1657,13 @@ getCertificateDownloadUrl: async (req, res) => {
 
   generateAllIranCertificatesWithAppwriteZip: async (req, res) => {
     try {
-      // Optional filters from query parameters
       const { 
         limit = null, 
         search = null, 
         certificate_ids = null 
       } = req.query;
   
-      // Build query (same as above method)
+      // Build query (same as your original)
       let query = `SELECT * FROM iran_registrations`;
       let params = [];
       let conditions = [];
@@ -1708,11 +1707,11 @@ getCertificateDownloadUrl: async (req, res) => {
   
       // Set response headers for ZIP download
       res.setHeader('Content-Type', 'application/zip');
-      res.setHeader('Content-Disposition', `attachment; filename="iran_certificates_with_urls_${new Date().getTime()}.zip"`);
+      res.setHeader('Content-Disposition', `attachment; filename="iran_certificates_${new Date().getTime()}.zip"`);
   
       // Create ZIP archive
       const archive = archiver('zip', {
-        zlib: { level: 9 }
+        zlib: { level: 1 } // Faster compression (was level 9)
       });
   
       archive.on('error', (err) => {
@@ -1728,90 +1727,80 @@ getCertificateDownloadUrl: async (req, res) => {
         total: registrations.length,
         successful: 0,
         failed: 0,
-        errors: [],
-        uploadedUrls: []
+        errors: []
       };
   
-      // Process each registration
-      for (let i = 0; i < registrations.length; i++) {
-        const registration = registrations[i];
+      // Optimized PDF options for speed
+      const pdfOptions = {
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
+        width: '210mm',
+        height: '297mm',
+        preferCSSPageSize: true,
+        displayHeaderFooter: false,
+        // Speed optimizations
+        omitBackground: false,
+        timeout: 30000,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      };
+  
+      // Process certificates in parallel batches
+      const batchSize = 10; // Process 10 at a time
+      
+      for (let i = 0; i < registrations.length; i += batchSize) {
+        const batch = registrations.slice(i, i + batchSize);
         
-        try {
-          const certificateHtml = generateCertificateHTML(registration);
+        const batchPromises = batch.map(async (registration) => {
+          try {
+            const certificateHtml = generateCertificateHTML(registration);
+            
+            const pdfBuffer = await htmlToPdf.generatePdf(
+              { content: certificateHtml }, 
+              pdfOptions
+            );
   
-          const options = {
-            format: 'A4',
-            printBackground: true,
-            margin: {
-              top: '0mm',
-              right: '0mm',
-              bottom: '0mm',
-              left: '0mm'
-            },
-            width: '210mm',
-            height: '297mm',
-            preferCSSPageSize: true,
-            displayHeaderFooter: false
-          };
-          
-          const pdfBuffer = await htmlToPdf.generatePdf(
-            { content: certificateHtml }, 
-            options
-          );
-  
-          const sanitizedName = registration.full_name.replace(/[^a-zA-Z0-9]/g, '_');
-          const fileName = `${sanitizedName}_${registration.certificate_u_id}.pdf`;
-  
-          // Upload to Appwrite
-          const uploadResult = await uploadCertificateToAppwrite(
-            pdfBuffer, 
-            fileName, 
-            registration.certificate_u_id
-          );
-  
-          if (uploadResult.success) {
-           
-  
-            results.uploadedUrls.push({
-              certificate_id: registration.certificate_u_id,
-              full_name: registration.full_name,
-              url: uploadResult.url
-            });
+            const sanitizedName = registration.full_name.replace(/[^a-zA-Z0-9]/g, '_');
+            const fileName = `${sanitizedName}_${registration.certificate_u_id}.pdf`;
   
             // Add PDF to ZIP
             archive.append(pdfBuffer, { name: fileName });
-          } else {
-            throw new Error(`Appwrite upload failed: ${uploadResult.error}`);
+            
+            return { success: true, registration };
+          } catch (error) {
+            console.error(`Error processing certificate ${registration.certificate_u_id}:`, error);
+            
+            const errorInfo = `Error generating certificate for ${registration.full_name} (${registration.certificate_u_id}): ${error.message}`;
+            archive.append(errorInfo, { name: `ERROR_${registration.certificate_u_id}.txt` });
+            
+            return { success: false, registration, error: error.message };
           }
+        });
   
-          results.successful++;
-  
-        } catch (error) {
-          console.error(`Error processing certificate ${registration.certificate_u_id}:`, error);
-          
-          results.failed++;
-          results.errors.push({
-            certificate_id: registration.certificate_u_id,
-            full_name: registration.full_name,
-            error: error.message
-          });
-  
-          const errorInfo = `Error generating certificate for ${registration.full_name} (${registration.certificate_u_id}): ${error.message}`;
-          archive.append(errorInfo, { name: `ERROR_${registration.certificate_u_id}.txt` });
-        }
+        const batchResults = await Promise.all(batchPromises);
+        
+        batchResults.forEach(result => {
+          if (result.success) {
+            results.successful++;
+          } else {
+            results.failed++;
+            results.errors.push({
+              certificate_id: result.registration.certificate_u_id,
+              full_name: result.registration.full_name,
+              error: result.error
+            });
+          }
+        });
       }
   
-      // Add comprehensive summary with URLs
+      // Add summary
       const summaryContent = `
-  Certificate Generation & Upload Summary
-  ======================================
+  Certificate Generation Summary
+  =============================
   Generated on: ${new Date().toISOString()}
   Total registrations processed: ${results.total}
   Successful generations: ${results.successful}
   Failed generations: ${results.failed}
-  
-  Successfully Uploaded Certificates:
-  ${results.uploadedUrls.map(item => `- ${item.certificate_id} (${item.full_name}): ${item.url}`).join('\n')}
   
   ${results.errors.length > 0 ? `
   Errors:
@@ -1819,21 +1808,21 @@ getCertificateDownloadUrl: async (req, res) => {
   ` : ''}
   `;
   
-      archive.append(summaryContent, { name: 'GENERATION_AND_UPLOAD_SUMMARY.txt' });
-  
+      archive.append(summaryContent, { name: 'GENERATION_SUMMARY.txt' });
       await archive.finalize();
   
-      console.log(`ZIP with Appwrite upload completed. Successful: ${results.successful}, Failed: ${results.failed}`);
+      console.log(`Direct ZIP completed. Successful: ${results.successful}, Failed: ${results.failed}`);
   
     } catch (error) {
-      console.error("Bulk Certificate ZIP with Appwrite Generation Error:", error);
+      console.error("Direct Certificate ZIP Generation Error:", error);
       
       if (!res.headersSent) {
         res.status(500).json({
-          message: "Server error during bulk certificate generation with upload",
+          message: "Server error during certificate generation",
           error: error.message
         });
       }
     }
-  }
+  },
+  
 };
