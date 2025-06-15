@@ -21,16 +21,34 @@ const APPWRITE_BUCKET_ID = '67aee35f000b324ca10c';
 
 async function uploadCertificateToAppwrite(pdfBuffer, fileName, certificateId) {
   try {
-    // Use certificate ID as file ID or generate a new UUID
-    const fileId = certificateId || uuidv4();
+    // Generate a valid fileId that meets Appwrite requirements:
+    // - Max 36 characters
+    // - Only a-z, A-Z, 0-9, period, hyphen, underscore
+    // - Cannot start with special character
+    
+    let validFileId;
+    if (certificateId) {
+      // Clean the certificate ID to make it valid
+      validFileId = certificateId
+        .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace invalid chars with underscore
+        .substring(0, 36); // Limit to 36 characters
+      
+      // Ensure it doesn't start with a special character
+      if (validFileId.match(/^[._-]/)) {
+        validFileId = 'cert_' + validFileId.substring(5); // Replace first chars and keep within limit
+      }
+    } else {
+      // Generate a new valid UUID-style ID
+      validFileId = uuidv4().replace(/-/g, '').substring(0, 32); // Remove hyphens and limit length
+    }
     
     const formData = new FormData();
-    formData.append('fileId', fileId);
+    formData.append('fileId', validFileId);
     formData.append('file', pdfBuffer, {
       filename: fileName,
       contentType: 'application/pdf'
     });
-
+    
     const response = await axios.post(
       `${APPWRITE_ENDPOINT}/storage/buckets/${APPWRITE_BUCKET_ID}/files`,
       formData,
@@ -43,7 +61,7 @@ async function uploadCertificateToAppwrite(pdfBuffer, fileName, certificateId) {
         }
       }
     );
-
+    
     // Return the file URL based on the response
     const uploadedFile = response.data;
     return {
