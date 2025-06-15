@@ -265,7 +265,7 @@ function generateCertificateHTML(registration) {
                 <div class="header">
                     <div class="wsro-logo-container">
                         <img 
-                            src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a29000921fb3e0f/view?project=67aee32f0028febbce2c&" 
+                            src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a29000921fb3e0f/view?project=67aee32f0028febbce2c&" 
                             alt="WSRO Logo" 
                             class="wsro-logo"
                         />
@@ -293,7 +293,7 @@ function generateCertificateHTML(registration) {
                     <div class="left-section">
                         <div class="uin-text">UIN:${registration.certificate_u_id}</div>
                         <img 
-                            src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a00000b2df78936/view?project=67aee32f0028febbce2c&" 
+                            src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a00000b2df78936/view?project=67aee32f0028febbce2c&" 
                             alt="WSRO Award Badge" 
                             class="award-badge"
                         />
@@ -301,7 +301,7 @@ function generateCertificateHTML(registration) {
                     
                     <div class="signature-section">
                         <img 
-                            src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a30002b5fd714e2/view?project=67aee32f0028febbce2c&" 
+                            src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a30002b5fd714e2/view?project=67aee32f0028febbce2c&" 
                             alt="Signature" 
                             class="signature-image"
                         />
@@ -312,7 +312,7 @@ function generateCertificateHTML(registration) {
                 <div class="footer-section">
                     <div class="footer-left">
                         <img 
-                            src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a4100036a2746c8/view?project=67aee32f0028febbce2c&" 
+                            src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a4100036a2746c8/view?project=67aee32f0028febbce2c&" 
                             alt="Triangle Design" 
                             class="triangle-image"
                         />
@@ -320,7 +320,7 @@ function generateCertificateHTML(registration) {
                     
                     <div class="footer-right">
                         <img 
-                            src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a38003b1eca0b22/view?project=67aee32f0028febbce2c&" 
+                            src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a38003b1eca0b22/view?project=67aee32f0028febbce2c&" 
                             alt="Chalik.net Logo" 
                             class="chalik-logo"
                         />
