@@ -86,11 +86,11 @@ function generateCertificateHTML(registration) {
     day: 'numeric'
   });
   const imagePaths = {
-    logo: path.join(__dirname, '../../assets/images/logo.png'),
-    bag: path.join(__dirname, '../../assets/images/bag.png'),
-    sign: path.join(__dirname, '../../assets/images/sign.png'),
-    triangle: path.join(__dirname, '../../assets/images/tringle.png'),
-    sponsor: path.join(__dirname, '../../assets/images/sponsor.png')
+    logo: path.join(__dirname, '../assets/images/logo.png'),
+    bag: path.join(__dirname, '../assets/images/bag.png'),
+    sign: path.join(__dirname, '../assets/images/sign.png'),
+    triangle: path.join(__dirname, '../assets/images/tringle.png'),
+    sponsor: path.join(__dirname, '../assets/images/sponsor.png')
   };
 
   // Convert paths to file:// URLs for html-pdf-node
