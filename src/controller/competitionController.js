@@ -10,7 +10,8 @@ const XLSX = require('xlsx');
 const upload = require("../config/s3");
 const { sendRegistrationEmail, sendParticipantEmail, sendTeamSummaryEmail } = require("../../utils/emailService");
 const fs = require("fs").promises;
-
+ // Use html-pdf-node instead of Puppeteer
+ const htmlToPdf = require('html-pdf-node');
 function generateCertificateHTML(registration) {
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
@@ -674,17 +675,14 @@ generateIranCertificates: async (req, res) => {
 
     const certificates = [];
 
+   
+
     for (const registration of registrations) {
       // Generate HTML for certificate
       const certificateHtml = generateCertificateHTML(registration);
       
-      // Convert HTML to PDF (you'll need to install puppeteer: npm install puppeteer)
-      const puppeteer = require('puppeteer');
-      const browser = await puppeteer.launch();
-      const page = await browser.newPage();
-      
-      await page.setContent(certificateHtml, { waitUntil: 'networkidle0' });
-      const pdfBuffer = await page.pdf({
+      // PDF generation options
+      const options = {
         format: 'A4',
         printBackground: true,
         margin: {
@@ -693,9 +691,13 @@ generateIranCertificates: async (req, res) => {
           bottom: '20px',
           left: '20px'
         }
-      });
-      
-      await browser.close();
+      };
+
+      // Convert HTML to PDF
+      const pdfBuffer = await htmlToPdf.generatePdf(
+        { content: certificateHtml }, 
+        options
+      );
 
       certificates.push({
         certificate_id: registration.certificate_u_id,
