@@ -34,7 +34,7 @@ router.post('/register', competitionController.registerForCompetition);
 
 router.post('/register-iran', competitionController.registerIranCompetition);
 router.post('/get-iran', competitionController.getIranRegistrationByCertificateId);
-
+router.post('generate-iran', competitionController.generateIranCertificates);
 router.get('/getall-iran', competitionController.getAllIranRegistrations);
 
 router.post('/send-certificates', [
