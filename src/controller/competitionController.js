@@ -104,30 +104,29 @@ function generateCertificateHTML(registration) {
             background: white;
             width: 210mm;
             height: 297mm;
-            margin: 0 auto;
+            margin: 0;
             padding: 0;
-            position: relative;
-     
+            overflow: hidden;
         }
         
         .certificate-container {
-            width: 894px;
-            height: 1200px;
-            margin: 0 auto;
+            width: 100%;
+            height: 100%;
             background: #731F15;
-            padding: 30px;
-            position: relative;
-      		z-index:1;
- 
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
       
-      .border{
-      border: 4px solid white;
-      padding: 30px;
-         width: 840px;
-            height: 1150px;
-      }
-  
+        .border {
+            border: 4px solid white;
+            padding: 20px;
+            width: 100%;
+            height: 100%;
+            max-width: 750px;
+            max-height: 1050px;
+        }
         
         .certificate-border {
             width: 100%;
@@ -135,21 +134,21 @@ function generateCertificateHTML(registration) {
             border: 4px solid white;
             background: white;
             position: relative;
-      		
         }
         
         .certificate-inner {
             width: 100%;
             height: 100%;
-            padding: 40px;
+            padding: 30px;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
             position: relative;
         }
         
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
         
         .wsro-logo-container {
@@ -157,186 +156,231 @@ function generateCertificateHTML(registration) {
         }
         
         .wsro-logo {
-            width: 600px;
-            height: 200px;
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            max-height: 150px;
             object-fit: contain;
         }
         
         .certificate-title {
-            font-size: 48px;
-            font-weight:500;
+            font-size: 42px;
+            font-weight: 500;
             color: #333;
             margin-bottom: 8px;
             letter-spacing: 4px;
         }
         
         .participation-text {
-            font-size: 18px;
+            font-size: 16px;
             color: #666;
             margin-bottom: 6px;
-       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         
         .event-details {
-            font-size: 16px;
+            font-size: 14px;
             color: #333;
             margin-bottom: 20px;
-       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         
         .awarded-text {
-            font-size: 16px;
+            font-size: 14px;
             color: #666;
             margin-bottom: 20px;
         }
         
         .participant-name {
-            font-size: 36px;
+            font-size: 32px;
             font-weight: bold;
             color: #333;
             padding-bottom: 8px;
             border-bottom: 2px dashed #731F15;
-           
+            margin-bottom: 20px;
         }
         
         .content-section {
+            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-      		margin-bottom:45px;
-      		font-size:18px;
+            margin-bottom: 30px;
         }
         
         .participation-details {
             text-align: center;
-            font-size: 18px;
+            font-size: 16px;
             color: #333;
-            line-height: 1;
-       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.4;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-      
-      
+        
         .bottom-section {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0px;
+            align-items: flex-end;
+            margin-top: auto;
         }
         
         .left-section {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
         
         .uin-text {
             font-size: 11px;
             font-weight: bold;
             color: #731F15;
-       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         
+        .award-badge {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+        
+        .signature-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .signature-image {
+            width: 150px;
+            height: 100px;
+            object-fit: contain;
+        }
         
         .footer-section {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
+            margin-top: 20px;
         }
         
         .footer-left {
             display: flex;
             align-items: flex-end;
-            gap: 20px;
         }
         
         .triangle-image {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
         }
         
         .footer-right {
             display: flex;
             align-items: center;
-            gap: 15px;
         }
         
-      
+        .chalik-logo {
+            width: 120px;
+            height: 60px;
+            object-fit: contain;
+        }
+        
+        /* Responsive adjustments for PDF generation */
+        @media print {
+            body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 0;
+            }
+            
+            .certificate-container {
+                width: 210mm;
+                height: 297mm;
+                padding: 15mm;
+            }
+            
+            .border {
+                padding: 15mm;
+            }
+            
+            .certificate-inner {
+                padding: 20mm;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="certificate-container">
-      <div class="border"> 
-        <div class="certificate-border">
-            <div class="certificate-inner">
-                <!-- Header with WSRO Logo -->
-                <div class="header">
-                    <div class="wsro-logo-container">
-                        <img 
-                            src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a29000921fb3e0f/view?project=67aee32f0028febbce2c&" 
-                            alt="WSRO Logo" 
-                            class="wsro-logo"
-                        />
+        <div class="border"> 
+            <div class="certificate-border">
+                <div class="certificate-inner">
+                    <!-- Header with WSRO Logo -->
+                    <div class="header">
+                        <div class="wsro-logo-container">
+                            <img 
+                                src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a29000921fb3e0f/view?project=67aee32f0028febbce2c&" 
+                                alt="WSRO Logo" 
+                                class="wsro-logo"
+                            />
+                        </div>
+                        
+                        <div class="certificate-title">CERTIFICATE</div>
+                        <div class="participation-text">OF PLACEMENT</div>
+                        <div class="event-details">(WSRO IRAN NATIONAL COMPETITION 2025)</div>
+                        <div class="awarded-text">This certificate is awarded to</div>
+                        
+                        <div class="participant-name">${registration.full_name}</div>
                     </div>
                     
-                    <div class="certificate-title">CERTIFICATE</div>
-                    <div class="participation-text">OF PLACEMENT</div>
-                    <div class="event-details">(WSRO IRAN NATIONAL COMPETITION 2025)</div>
-                    <div class="awarded-text">This certificate is awarded to</div>
-                    
-                    <div class="participant-name">${registration.full_name}</div>
-                </div>
-                
-                <!-- Main Content -->
-                <div class="content-section">
-                    <div class="participation-details">
-                        for participating in the WSRO IRAN National Competition 2025 on the date<br/>
-                        of <strong>21,22 & 23 May 2025</strong><br/>
-                        At <strong>${registration.school_institute}.</strong>
-                    </div>
-                </div>
-                
-                <!-- Bottom Section -->
-                <div class="bottom-section">
-                    <div class="left-section">
-                        <div class="uin-text">UIN:${registration.certificate_u_id}</div>
-                        <img 
-                            src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a00000b2df78936/view?project=67aee32f0028febbce2c&" 
-                            alt="WSRO Award Badge" 
-                            class="award-badge"
-                        />
+                    <!-- Main Content -->
+                    <div class="content-section">
+                        <div class="participation-details">
+                            for participating in the WSRO IRAN National Competition 2025 on the date<br/>
+                            of <strong>21,22 & 23 May 2025</strong><br/>
+                            At <strong>${registration.school_institute}.</strong>
+                        </div>
                     </div>
                     
-                    <div class="signature-section">
-                        <img 
-                            src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a30002b5fd714e2/view?project=67aee32f0028febbce2c&" 
-                            alt="Signature" 
-                            class="signature-image"
-                        />
-                    </div>
-                </div>
-                
-                <!-- Footer -->
-                <div class="footer-section">
-                    <div class="footer-left">
-                        <img 
-                            src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a4100036a2746c8/view?project=67aee32f0028febbce2c&" 
-                            alt="Triangle Design" 
-                            class="triangle-image"
-                        />
+                    <!-- Bottom Section -->
+                    <div class="bottom-section">
+                        <div class="left-section">
+                            <div class="uin-text">UIN:${registration.certificate_u_id}</div>
+                            <img 
+                                src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a00000b2df78936/view?project=67aee32f0028febbce2c&" 
+                                alt="WSRO Award Badge" 
+                                class="award-badge"
+                            />
+                        </div>
+                        
+                        <div class="signature-section">
+                            <img 
+                                src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a30002b5fd714e2/view?project=67aee32f0028febbce2c&" 
+                                alt="Signature" 
+                                class="signature-image"
+                            />
+                        </div>
                     </div>
                     
-                    <div class="footer-right">
-                        <img 
-                            src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a38003b1eca0b22/view?project=67aee32f0028febbce2c&" 
-                            alt="Chalik.net Logo" 
-                            class="chalik-logo"
-                        />
+                    <!-- Footer -->
+                    <div class="footer-section">
+                        <div class="footer-left">
+                            <img 
+                                src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a4100036a2746c8/view?project=67aee32f0028febbce2c&" 
+                                alt="Triangle Design" 
+                                class="triangle-image"
+                            />
+                        </div>
+                        
+                        <div class="footer-right">
+                            <img 
+                                src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a38003b1eca0b22/view?project=67aee32f0028febbce2c&" 
+                                alt="Chalik.net Logo" 
+                                class="chalik-logo"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
         </div>
     </div>
 </body>
@@ -815,16 +859,24 @@ generateIranCertificates: async (req, res) => {
 
     for (const registration of registrations) {
       try {
-        // Generate HTML for certificate
         const certificateHtml = generateCertificateHTML(registration);
-        
-        // PDF generation options
+
+        // Updated PDF generation options for better fitting
         const options = {
           format: 'A4',
           printBackground: true,
-         
+          margin: {
+            top: '0mm',
+            right: '0mm',
+            bottom: '0mm',
+            left: '0mm'
+          },
+          width: '210mm',
+          height: '297mm',
+          preferCSSPageSize: true,
+          displayHeaderFooter: false
         };
-
+        
         // Convert HTML to PDF
         const pdfBuffer = await htmlToPdf.generatePdf(
           { content: certificateHtml }, 
