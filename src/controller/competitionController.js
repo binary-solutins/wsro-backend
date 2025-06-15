@@ -85,19 +85,6 @@ function generateCertificateHTML(registration) {
     month: 'long',
     day: 'numeric'
   });
-  const imagePaths = {
-    logo: path.join(__dirname, '../../assets/logo.png'),
-    bag: path.join(__dirname, '../../assets/bag.png'),
-    sign: path.join(__dirname, '../../assets/sign.png'),
-    triangle: path.join(__dirname, '../../assets/tringle.png'),
-    sponsor: path.join(__dirname, '../../assets/sponsor.png')
-  };
-
-  // Convert paths to file:// URLs for html-pdf-node
-  const imageUrls = {};
-  for (const [key, imagePath] of Object.entries(imagePaths)) {
-    imageUrls[key] = `file://${imagePath.replace(/\\/g, '/')}`;
-  }
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -278,7 +265,7 @@ function generateCertificateHTML(registration) {
                 <div class="header">
                     <div class="wsro-logo-container">
                         <img 
-                            src="${imageUrls.logo}" 
+                            src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a29000921fb3e0f/view?project=67aee32f0028febbce2c&" 
                             alt="WSRO Logo" 
                             class="wsro-logo"
                         />
@@ -306,7 +293,7 @@ function generateCertificateHTML(registration) {
                     <div class="left-section">
                         <div class="uin-text">UIN:${registration.certificate_u_id}</div>
                         <img 
-                            src="${imageUrls.bag}" 
+                            src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a00000b2df78936/view?project=67aee32f0028febbce2c&" 
                             alt="WSRO Award Badge" 
                             class="award-badge"
                         />
@@ -314,7 +301,7 @@ function generateCertificateHTML(registration) {
                     
                     <div class="signature-section">
                         <img 
-                            src="${imageUrls.sign}" 
+                            src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a30002b5fd714e2/view?project=67aee32f0028febbce2c&" 
                             alt="Signature" 
                             class="signature-image"
                         />
@@ -325,7 +312,7 @@ function generateCertificateHTML(registration) {
                 <div class="footer-section">
                     <div class="footer-left">
                         <img 
-                            src="${imageUrls.tringle}" 
+                            src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a4100036a2746c8/view?project=67aee32f0028febbce2c&" 
                             alt="Triangle Design" 
                             class="triangle-image"
                         />
@@ -333,7 +320,7 @@ function generateCertificateHTML(registration) {
                     
                     <div class="footer-right">
                         <img 
-                            src="${imageUrls.sponsor}" 
+                            src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a38003b1eca0b22/view?project=67aee32f0028febbce2c&" 
                             alt="Chalik.net Logo" 
                             class="chalik-logo"
                         />
