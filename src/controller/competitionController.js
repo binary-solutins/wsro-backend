@@ -11,6 +11,199 @@ const upload = require("../config/s3");
 const { sendRegistrationEmail, sendParticipantEmail, sendTeamSummaryEmail } = require("../../utils/emailService");
 const fs = require("fs").promises;
 
+function generateCertificateHTML(registration) {
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Certificate - ${registration.certificate_u_id}</title>
+        <style>
+            body {
+                font-family: 'Times New Roman', serif;
+                margin: 0;
+                padding: 40px;
+                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .certificate {
+                background: white;
+                padding: 60px;
+                border: 8px solid #2c5aa0;
+                border-radius: 20px;
+                box-shadow: 0 0 30px rgba(0,0,0,0.1);
+                text-align: center;
+                max-width: 800px;
+                width: 100%;
+                position: relative;
+            }
+            .certificate::before {
+                content: '';
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                right: 20px;
+                bottom: 20px;
+                border: 2px solid #gold;
+                border-radius: 10px;
+            }
+            .header {
+                margin-bottom: 40px;
+            }
+            .title {
+                font-size: 48px;
+                font-weight: bold;
+                color: #2c5aa0;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+                letter-spacing: 3px;
+            }
+            .subtitle {
+                font-size: 24px;
+                color: #666;
+                margin-bottom: 30px;
+            }
+            .recipient {
+                font-size: 36px;
+                font-weight: bold;
+                color: #333;
+                margin: 30px 0;
+                padding: 20px;
+                border-bottom: 3px solid #2c5aa0;
+                display: inline-block;
+            }
+            .details {
+                margin: 30px 0;
+                font-size: 18px;
+                line-height: 1.8;
+                color: #555;
+            }
+            .detail-row {
+                margin: 15px 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 0;
+            }
+            .detail-label {
+                font-weight: bold;
+                color: #2c5aa0;
+                flex: 1;
+                text-align: left;
+            }
+            .detail-value {
+                flex: 2;
+                text-align: left;
+                padding-left: 20px;
+            }
+            .certificate-id {
+                position: absolute;
+                top: 30px;
+                right: 30px;
+                font-size: 14px;
+                color: #666;
+                font-weight: bold;
+            }
+            .date {
+                margin-top: 40px;
+                font-size: 16px;
+                color: #666;
+            }
+            .signature-section {
+                margin-top: 60px;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+            }
+            .signature {
+                text-align: center;
+                border-top: 2px solid #333;
+                padding-top: 10px;
+                width: 200px;
+                font-size: 14px;
+                color: #666;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="certificate">
+            <div class="certificate-id">${registration.certificate_u_id}</div>
+            
+            <div class="header">
+                <div class="title">Certificate of Achievement</div>
+                <div class="subtitle">Iran Competition</div>
+            </div>
+
+            <div style="font-size: 20px; margin: 20px 0;">This is to certify that</div>
+            
+            <div class="recipient">${registration.full_name}</div>
+
+            <div class="details">
+                ${registration.school_institute ? `
+                <div class="detail-row">
+                    <div class="detail-label">Institution:</div>
+                    <div class="detail-value">${registration.school_institute}</div>
+                </div>` : ''}
+                
+                ${registration.age ? `
+                <div class="detail-row">
+                    <div class="detail-label">Age:</div>
+                    <div class="detail-value">${registration.age} years</div>
+                </div>` : ''}
+                
+                ${registration.course_name_competition_category ? `
+                <div class="detail-row">
+                    <div class="detail-label">Category:</div>
+                    <div class="detail-value">${registration.course_name_competition_category}</div>
+                </div>` : ''}
+                
+                ${registration.grade_or_winning_rank ? `
+                <div class="detail-row">
+                    <div class="detail-label">Achievement:</div>
+                    <div class="detail-value">${registration.grade_or_winning_rank}</div>
+                </div>` : ''}
+                
+                ${registration.venue ? `
+                <div class="detail-row">
+                    <div class="detail-label">Venue:</div>
+                    <div class="detail-value">${registration.venue}</div>
+                </div>` : ''}
+                
+                ${registration.dob ? `
+                <div class="detail-row">
+                    <div class="detail-label">Date of Birth:</div>
+                    <div class="detail-value">${registration.dob}</div>
+                </div>` : ''}
+            </div>
+
+            <div class="date">
+                Issued on: ${currentDate}
+            </div>
+
+            <div class="signature-section">
+                <div class="signature">
+                    Authorized Signature
+                </div>
+                <div class="signature">
+                    Director
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+}
+
 module.exports = {
   getCompetitions: async (req, res) => {
     try {
@@ -367,94 +560,167 @@ module.exports = {
   
   
 
-  registerIranCompetition: async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+registerIranCompetition: async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const entries = req.body;
+
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return res.status(400).json({ message: "Entries array is required" });
+  }
+
+  // Validate each entry - only full_name is required
+  for (const entry of entries) {
+    if (!entry.full_name || entry.full_name.trim() === '') {
+      return res.status(400).json({ message: "Full name is required for each entry" });
     }
-  
-    const entries = req.body;
-  
-    if (!Array.isArray(entries) || entries.length === 0) {
-      return res.status(400).json({ message: "Entries array is required" });
+    
+    // Optional age validation - only if provided
+    if (entry.age && (isNaN(entry.age) || entry.age < 1)) {
+      return res.status(400).json({ message: "Valid age is required if provided" });
     }
-  
-    // Validate each entry
-    for (const entry of entries) {
-      if (!entry.full_name || !entry.school_institute || !entry.dob || 
-          !entry.age || !entry.course_name_competition_category || !entry.grade_or_winning_rank) {
-        return res.status(400).json({ message: "All fields are required for each entry" });
-      }
+  }
+
+  const connection = await db.getConnection();
+  await connection.beginTransaction();
+
+  try {
+    // Get and lock sequence for certificate ID generation
+    const [seq] = await connection.query(
+      'SELECT current_val FROM iran_certificate_sequence FOR UPDATE'
+    );
+    const currentVal = seq[0].current_val;
+    const newVal = currentVal + entries.length;
+
+    // Generate certificate IDs in format WSROIR/25/PA/0001
+    const entriesWithCertId = entries.map((entry, index) => {
+      const sequenceNumber = currentVal + index + 1;
+      return {
+        full_name: entry.full_name?.trim() || null,
+        school_institute: entry.school_institute?.trim() || null,
+        dob: entry.dob || null,
+        age: entry.age || null,
+        course_name_competition_category: entry.course_name_competition_category?.trim() || null,
+        grade_or_winning_rank: entry.grade_or_winning_rank?.trim() || null,
+        venue: entry.venue?.trim() || null,
+        certificate_u_id: `WSROIR/25/PA/${sequenceNumber.toString().padStart(4, '0')}`
+      };
+    });
+
+    // Update sequence
+    await connection.query(
+      'UPDATE iran_certificate_sequence SET current_val = ?',
+      [newVal]
+    );
+
+    // Prepare bulk insert with all fields (allowing nulls)
+    const values = entriesWithCertId.map(entry => [
+      entry.full_name,
+      entry.school_institute,
+      entry.dob,
+      entry.age,
+      entry.course_name_competition_category,
+      entry.grade_or_winning_rank,
+      entry.venue,
+      entry.certificate_u_id
+    ]);
+
+    await connection.query(
+      `INSERT INTO iran_registrations
+      (full_name, school_institute, dob, age, course_name_competition_category, grade_or_winning_rank, venue, certificate_u_id)
+      VALUES ?`,
+      [values]
+    );
+
+    await connection.commit();
+
+    res.status(201).json({
+      message: "Registrations added successfully",
+      entries: entriesWithCertId.map(e => ({
+        full_name: e.full_name,
+        certificate_u_id: e.certificate_u_id
+      }))
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error("Registration Error:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
+  } finally {
+    connection.release();
+  }
+},
+
+// Certificate Generation API
+generateIranCertificates: async (req, res) => {
+  const { certificate_ids } = req.body;
+
+  if (!Array.isArray(certificate_ids) || certificate_ids.length === 0) {
+    return res.status(400).json({ message: "Certificate IDs array is required" });
+  }
+
+  try {
+    // Fetch registration data for the certificate IDs
+    const placeholders = certificate_ids.map(() => '?').join(',');
+    const [registrations] = await db.query(
+      `SELECT * FROM iran_registrations WHERE certificate_u_id IN (${placeholders})`,
+      certificate_ids
+    );
+
+    if (registrations.length === 0) {
+      return res.status(404).json({ message: "No registrations found for provided certificate IDs" });
+    }
+
+    const certificates = [];
+
+    for (const registration of registrations) {
+      // Generate HTML for certificate
+      const certificateHtml = generateCertificateHTML(registration);
       
-      if (isNaN(entry.age) || entry.age < 1) {
-        return res.status(400).json({ message: "Valid age is required" });
-      }
+      // Convert HTML to PDF (you'll need to install puppeteer: npm install puppeteer)
+      const puppeteer = require('puppeteer');
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+      
+      await page.setContent(certificateHtml, { waitUntil: 'networkidle0' });
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20px',
+          right: '20px',
+          bottom: '20px',
+          left: '20px'
+        }
+      });
+      
+      await browser.close();
+
+      certificates.push({
+        certificate_id: registration.certificate_u_id,
+        full_name: registration.full_name,
+        pdf: pdfBuffer.toString('base64') // Return as base64 string
+      });
     }
-  
-    const connection = await db.getConnection();
-    await connection.beginTransaction();
-  
-    try {
-      // Get and lock sequence
-      const [seq] = await connection.query(
-        'SELECT current_val FROM iran_certificate_sequence FOR UPDATE'
-      );
-      const currentVal = seq[0].current_val;
-      const newVal = currentVal + entries.length;
-  
-      // Generate certificate IDs
-      const entriesWithCertId = entries.map((entry, index) => {
-        const sequenceNumber = currentVal + index + 1;
-        return {
-          ...entry,
-          certificate_u_id: `IR/CR${sequenceNumber.toString().padStart(6, '0')}`
-        };
-      });
-  
-      // Update sequence
-      await connection.query(
-        'UPDATE iran_certificate_sequence SET current_val = ?',
-        [newVal]
-      );
-  
-      // Prepare bulk insert
-      const values = entriesWithCertId.map(entry => [
-        entry.full_name,
-        entry.school_institute,
-        entry.dob,
-        entry.age,
-        entry.course_name_competition_category,
-        entry.grade_or_winning_rank,
-        entry.certificate_u_id
-      ]);
-  
-      await connection.query(
-        `INSERT INTO iran_registrations 
-        (full_name, school_institute, dob, age, course_name_competition_category, grade_or_winning_rank, certificate_u_id)
-        VALUES ?`,
-        [values]
-      );
-  
-      await connection.commit();
-  
-      res.status(201).json({
-        message: "Registrations added successfully",
-        entries: entriesWithCertId.map(e => ({
-          full_name: e.full_name,
-          certificate_u_id: e.certificate_u_id
-        }))
-      });
-    } catch (error) {
-      await connection.rollback();
-      console.error("Registration Error:", error);
-      res.status(500).json({
-        message: "Server error",
-        error: error.message
-      });
-    } finally {
-      connection.release();
-    }
-  },
+
+    res.status(200).json({
+      message: "Certificates generated successfully",
+      certificates: certificates
+    });
+
+  } catch (error) {
+    console.error("Certificate Generation Error:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
+  }
+},
 
   getIranRegistrationByCertificateId: async (req, res) => {
     const { certificate_u_id } = req.body;
