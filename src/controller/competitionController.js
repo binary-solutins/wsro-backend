@@ -1739,7 +1739,7 @@ getCertificateDownloadUrl: async (req, res) => {
       const pdfOptions = {
         format: 'A4',
         printBackground: true,
-        margin: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' },
+        margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
         width: '210mm',
         height: '297mm',
         timeout: 10000,
