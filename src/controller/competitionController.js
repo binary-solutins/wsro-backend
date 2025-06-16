@@ -1657,13 +1657,16 @@ getCertificateDownloadUrl: async (req, res) => {
 
   generateAllIranCertificatesWithAppwriteZip: async (req, res) => {
     try {
+      console.log('Starting certificate generation for direct ZIP download...');
+      const startTime = Date.now();
+      
       const { 
         limit = null, 
         search = null, 
         certificate_ids = null 
       } = req.query;
   
-      // Build query (same as your original)
+      // Build query
       let query = `SELECT * FROM iran_registrations`;
       let params = [];
       let conditions = [];
@@ -1697,7 +1700,9 @@ getCertificateDownloadUrl: async (req, res) => {
         params.push(parseInt(limit));
       }
   
+      console.log('Executing database query...');
       const [registrations] = await db.query(query, params);
+      console.log(`Found ${registrations.length} registrations to process`);
   
       if (registrations.length === 0) {
         return res.status(404).json({ 
@@ -1706,21 +1711,43 @@ getCertificateDownloadUrl: async (req, res) => {
       }
   
       // Set response headers for ZIP download
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `iran_certificates_${timestamp}.zip`;
+      
       res.setHeader('Content-Type', 'application/zip');
-      res.setHeader('Content-Disposition', `attachment; filename="iran_certificates_${new Date().getTime()}.zip"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', ''); // Let it be calculated
+      res.setHeader('Cache-Control', 'no-cache');
   
-      // Create ZIP archive
+      // Create ZIP archive with optimized settings
       const archive = archiver('zip', {
-        zlib: { level: 1 } // Faster compression (was level 9)
+        zlib: { 
+          level: 1, // Fastest compression
+          chunkSize: 32 * 1024 // 32KB chunks
+        },
+        forceLocalTime: true,
+        store: false // Use compression but fast
       });
   
+      // Error handling
       archive.on('error', (err) => {
         console.error('Archive error:', err);
         if (!res.headersSent) {
-          res.status(500).json({ message: 'Error creating ZIP file', error: err.message });
+          res.status(500).json({ 
+            message: 'Error creating ZIP file', 
+            error: err.message 
+          });
         }
       });
   
+      // Progress tracking
+      archive.on('progress', (progress) => {
+        if (progress.entries.processed % 50 === 0) {
+          console.log(`ZIP Progress: ${progress.entries.processed}/${progress.entries.total} files processed`);
+        }
+      });
+  
+      // Pipe archive to response
       archive.pipe(res);
   
       const results = {
@@ -1730,28 +1757,50 @@ getCertificateDownloadUrl: async (req, res) => {
         errors: []
       };
   
-      // Optimized PDF options for speed
+      // Optimized PDF generation options
       const pdfOptions = {
         format: 'A4',
         printBackground: true,
-        margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
+        margin: {
+          top: '0mm',
+          right: '0mm',
+          bottom: '0mm',
+          left: '0mm'
+        },
         width: '210mm',
         height: '297mm',
         preferCSSPageSize: true,
         displayHeaderFooter: false,
-        // Speed optimizations
-        omitBackground: false,
-        timeout: 30000,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        // Performance optimizations
+        timeout: 20000, // 20 seconds timeout
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+          '--no-first-run',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding'
+        ]
       };
   
-      // Process certificates in parallel batches
-      const batchSize = 10; // Process 10 at a time
+      // Process in optimized batches for 539 files
+      const batchSize = 15; // Slightly larger batch for efficiency
+      const totalBatches = Math.ceil(registrations.length / batchSize);
       
-      for (let i = 0; i < registrations.length; i += batchSize) {
-        const batch = registrations.slice(i, i + batchSize);
+      console.log(`Processing ${registrations.length} certificates in ${totalBatches} batches of ${batchSize}...`);
+      
+      for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+        const batchStart = batchIndex * batchSize;
+        const batchEnd = Math.min(batchStart + batchSize, registrations.length);
+        const batch = registrations.slice(batchStart, batchEnd);
         
-        const batchPromises = batch.map(async (registration) => {
+        console.log(`Processing batch ${batchIndex + 1}/${totalBatches} (${batch.length} certificates)...`);
+        
+        // Process batch in parallel
+        const batchPromises = batch.map(async (registration, index) => {
           try {
             const certificateHtml = generateCertificateHTML(registration);
             
@@ -1760,25 +1809,43 @@ getCertificateDownloadUrl: async (req, res) => {
               pdfOptions
             );
   
-            const sanitizedName = registration.full_name.replace(/[^a-zA-Z0-9]/g, '_');
+            // Create safe filename
+            const sanitizedName = registration.full_name
+              .replace(/[^a-zA-Z0-9\s]/g, '')
+              .replace(/\s+/g, '_')
+              .substring(0, 50); // Limit length
+            
             const fileName = `${sanitizedName}_${registration.certificate_u_id}.pdf`;
   
-            // Add PDF to ZIP
+            // Add PDF to ZIP archive
             archive.append(pdfBuffer, { name: fileName });
             
-            return { success: true, registration };
-          } catch (error) {
-            console.error(`Error processing certificate ${registration.certificate_u_id}:`, error);
+            return { 
+              success: true, 
+              registration,
+              fileName,
+              size: pdfBuffer.length
+            };
             
+          } catch (error) {
+            console.error(`Error processing certificate ${registration.certificate_u_id}:`, error.message);
+            
+            // Add error file to ZIP
             const errorInfo = `Error generating certificate for ${registration.full_name} (${registration.certificate_u_id}): ${error.message}`;
             archive.append(errorInfo, { name: `ERROR_${registration.certificate_u_id}.txt` });
             
-            return { success: false, registration, error: error.message };
+            return { 
+              success: false, 
+              registration, 
+              error: error.message 
+            };
           }
         });
   
+        // Wait for batch to complete
         const batchResults = await Promise.all(batchPromises);
         
+        // Update results
         batchResults.forEach(result => {
           if (result.success) {
             results.successful++;
@@ -1791,38 +1858,60 @@ getCertificateDownloadUrl: async (req, res) => {
             });
           }
         });
+  
+        // Small delay between batches to prevent overwhelming the system
+        if (batchIndex < totalBatches - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        console.log(`Batch ${batchIndex + 1} completed. Success: ${results.successful}, Failed: ${results.failed}`);
       }
   
-      // Add summary
+      // Add comprehensive summary
+      const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
       const summaryContent = `
-  Certificate Generation Summary
-  =============================
+  Iran Certificate Generation Summary
+  ==================================
   Generated on: ${new Date().toISOString()}
+  Processing time: ${processingTime} seconds
   Total registrations processed: ${results.total}
   Successful generations: ${results.successful}
   Failed generations: ${results.failed}
+  Success rate: ${((results.successful / results.total) * 100).toFixed(2)}%
+  
+  Performance Stats:
+  - Average time per certificate: ${(processingTime / results.total).toFixed(3)} seconds
+  - Certificates per second: ${(results.total / processingTime).toFixed(2)}
   
   ${results.errors.length > 0 ? `
-  Errors:
-  ${results.errors.map(err => `- ${err.certificate_id} (${err.full_name}): ${err.error}`).join('\n')}
-  ` : ''}
+  Failed Certificate Details:
+  ${results.errors.map((err, index) => `${index + 1}. ${err.certificate_id} (${err.full_name}): ${err.error}`).join('\n')}
+  ` : 'All certificates generated successfully!'}
+  
+  Generated by Iran Certificate System
+  Timestamp: ${timestamp}
   `;
   
       archive.append(summaryContent, { name: 'GENERATION_SUMMARY.txt' });
+  
+      // Finalize the archive
+      console.log('Finalizing ZIP archive...');
       await archive.finalize();
   
-      console.log(`Direct ZIP completed. Successful: ${results.successful}, Failed: ${results.failed}`);
+      const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+      console.log(`✅ ZIP generation completed in ${totalTime} seconds`);
+      console.log(`📊 Results: ${results.successful} successful, ${results.failed} failed`);
   
     } catch (error) {
-      console.error("Direct Certificate ZIP Generation Error:", error);
+      console.error("❌ Direct Certificate ZIP Generation Error:", error);
       
       if (!res.headersSent) {
         res.status(500).json({
           message: "Server error during certificate generation",
-          error: error.message
+          error: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
       }
     }
-  },
-  
+  }  
 };
