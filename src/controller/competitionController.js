@@ -324,7 +324,7 @@ function generateCertificateHTML(registration) {
                     <!-- Main Content -->
                     <div class="content-section">
                         <div class="participation-details">
-                            for winning <strong>${registration.grade_or_winning_rank}.</strong> rank in the WSRO IRAN National Competition 2025 on the date<br/>
+                            for winning <strong>${registration.grade_or_winning_rank}.</strong> rank <Br> in the WSRO IRAN National Competition 2025 on the date<br/>
                             of <strong>21,22 & 23 May 2025</strong><br/>
                             At <strong>${registration.school_institute}.</strong>
                         </div>
