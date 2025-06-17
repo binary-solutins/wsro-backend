@@ -1672,7 +1672,9 @@ getCertificateDownloadUrl: async (req, res) => {
         page = 1, 
         per_page = 50, // Process 50 certificates per ZIP
         search = null, 
-        certificate_ids = null 
+        certificate_ids = null,
+        start_id = null,  // New parameter for ID range start
+        end_id = null     // New parameter for ID range end
       } = req.query;
   
       const pageNum = parseInt(page);
@@ -1685,6 +1687,39 @@ getCertificateDownloadUrl: async (req, res) => {
       let params = [];
       let conditions = [];
   
+      // Handle ID range filtering
+      if (start_id && end_id) {
+        const startIdNum = parseInt(start_id);
+        const endIdNum = parseInt(end_id);
+        
+        if (startIdNum > endIdNum) {
+          return res.status(400).json({ 
+            message: "start_id must be less than or equal to end_id" 
+          });
+        }
+        
+        conditions.push(`id BETWEEN ? AND ?`);
+        params.push(startIdNum, endIdNum);
+        console.log(`🎯 Filtering by ID range: ${startIdNum} to ${endIdNum}`);
+      }
+      
+      // Handle single ID parameter (if only start_id is provided)
+      else if (start_id && !end_id) {
+        const startIdNum = parseInt(start_id);
+        conditions.push(`id >= ?`);
+        params.push(startIdNum);
+        console.log(`🎯 Filtering from ID: ${startIdNum} onwards`);
+      }
+      
+      // Handle end ID parameter (if only end_id is provided)
+      else if (!start_id && end_id) {
+        const endIdNum = parseInt(end_id);
+        conditions.push(`id <= ?`);
+        params.push(endIdNum);
+        console.log(`🎯 Filtering up to ID: ${endIdNum}`);
+      }
+  
+      // Handle search functionality
       if (search) {
         const searchCondition = `(
           full_name LIKE ? OR 
@@ -1697,6 +1732,7 @@ getCertificateDownloadUrl: async (req, res) => {
         params.push(searchTerm, searchTerm, searchTerm, searchTerm);
       }
   
+      // Handle specific certificate IDs
       if (certificate_ids) {
         const ids = certificate_ids.split(',').map(id => id.trim());
         const placeholders = ids.map(() => '?').join(',');
@@ -1704,6 +1740,7 @@ getCertificateDownloadUrl: async (req, res) => {
         params.push(...ids);
       }
   
+      // Apply WHERE conditions if any exist
       if (conditions.length > 0) {
         const whereClause = ` WHERE ${conditions.join(' AND ')}`;
         query += whereClause;
@@ -1715,29 +1752,55 @@ getCertificateDownloadUrl: async (req, res) => {
       const totalRecords = countResult[0].total;
       const totalPages = Math.ceil(totalRecords / perPage);
   
-      // Add pagination
-      query += ` ORDER BY id DESC LIMIT ? OFFSET ?`;
-      params.push(perPage, offset);
+      // Add pagination (only if not using ID range)
+      if (!start_id && !end_id) {
+        query += ` ORDER BY id DESC LIMIT ? OFFSET ?`;
+        params.push(perPage, offset);
+      } else {
+        // For ID range, order by ID ascending and apply pagination
+        query += ` ORDER BY id ASC LIMIT ? OFFSET ?`;
+        params.push(perPage, offset);
+      }
   
       const [registrations] = await db.query(query, params);
   
       if (registrations.length === 0) {
+        let message = `No records found`;
+        if (start_id || end_id) {
+          message += ` for ID range ${start_id || 'start'} to ${end_id || 'end'}`;
+        } else {
+          message += ` for page ${pageNum}`;
+        }
+        
         return res.status(404).json({ 
-          message: `No records found for page ${pageNum}`,
+          message,
           pagination: {
             current_page: pageNum,
             per_page: perPage,
             total_pages: totalPages,
-            total_records: totalRecords
+            total_records: totalRecords,
+            id_range: start_id || end_id ? { start_id, end_id } : null
           }
         });
       }
   
-      console.log(`📦 Generating ZIP for page ${pageNum}/${totalPages} (${registrations.length} certificates)`);
+      // Determine filename based on filtering type
+      let filename;
+      if (start_id && end_id) {
+        filename = `certificates_id_${start_id}_to_${end_id}_page_${pageNum}.zip`;
+      } else if (start_id) {
+        filename = `certificates_from_id_${start_id}_page_${pageNum}.zip`;
+      } else if (end_id) {
+        filename = `certificates_up_to_id_${end_id}_page_${pageNum}.zip`;
+      } else {
+        filename = `certificates_page_${pageNum}_of_${totalPages}.zip`;
+      }
+  
+      console.log(`📦 Generating ZIP: ${filename} (${registrations.length} certificates)`);
   
       // Set response headers
       res.setHeader('Content-Type', 'application/zip');
-      res.setHeader('Content-Disposition', `attachment; filename="certificates_page_${pageNum}_of_${totalPages}.zip"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   
       // Create ZIP
       const archive = archiver('zip', {
@@ -1777,47 +1840,80 @@ getCertificateDownloadUrl: async (req, res) => {
             .replace(/\s+/g, '_')
             .substring(0, 30);
           
-          const fileName = `${sanitizedName}_${registration.certificate_u_id}.pdf`;
+          const fileName = `${sanitizedName}_${registration.certificate_u_id}_ID_${registration.id}.pdf`;
           archive.append(pdfBuffer, { name: fileName });
           
           successful++;
           
         } catch (error) {
-          console.error(`❌ Error: ${registration.certificate_u_id}`, error.message);
+          console.error(`❌ Error: ${registration.certificate_u_id} (ID: ${registration.id})`, error.message);
           failed++;
-          archive.append(`Error: ${error.message}`, { name: `ERROR_${registration.certificate_u_id}.txt` });
+          archive.append(`Error: ${error.message}`, { name: `ERROR_${registration.certificate_u_id}_ID_${registration.id}.txt` });
         }
       }
   
-      // Add pagination info
-      const paginationInfo = `
-  Paginated Certificate Generation
-  ===============================
-  Page: ${pageNum} of ${totalPages}
-  Records in this ZIP: ${registrations.length}
-  Total records available: ${totalRecords}
-  Per page: ${perPage}
+      // Add info file with details
+      let infoContent;
+      if (start_id || end_id) {
+        infoContent = `
+Certificate Generation by ID Range
+=================================
+ID Range: ${start_id || 'start'} to ${end_id || 'end'}
+Page: ${pageNum} of ${totalPages}
+Records in this ZIP: ${registrations.length}
+Total records in range: ${totalRecords}
+Per page: ${perPage}
+
+Generated: ${new Date().toISOString()}
+Successful: ${successful}
+Failed: ${failed}
+
+ID Range Examples:
+- ID 1 to 50: GET /api/certificates/paginated-zip?start_id=1&end_id=50
+- ID 33 to 56: GET /api/certificates/paginated-zip?start_id=33&end_id=56
+- From ID 100: GET /api/certificates/paginated-zip?start_id=100
+- Up to ID 200: GET /api/certificates/paginated-zip?end_id=200
+
+First record ID in this ZIP: ${registrations[0]?.id || 'N/A'}
+Last record ID in this ZIP: ${registrations[registrations.length - 1]?.id || 'N/A'}
+`;
+      } else {
+        infoContent = `
+Paginated Certificate Generation
+===============================
+Page: ${pageNum} of ${totalPages}
+Records in this ZIP: ${registrations.length}
+Total records available: ${totalRecords}
+Per page: ${perPage}
+
+Generated: ${new Date().toISOString()}
+Successful: ${successful}
+Failed: ${failed}
+
+To get all certificates, download each page:
+Page 1: GET /api/certificates/paginated-zip?page=1&per_page=${perPage}
+Page 2: GET /api/certificates/paginated-zip?page=2&per_page=${perPage}
+...
+Page ${totalPages}: GET /api/certificates/paginated-zip?page=${totalPages}&per_page=${perPage}
+
+Or use ID ranges:
+- ID 1 to 50: GET /api/certificates/paginated-zip?start_id=1&end_id=50
+- ID 33 to 56: GET /api/certificates/paginated-zip?start_id=33&end_id=56
+`;
+      }
   
-  Generated: ${new Date().toISOString()}
-  Successful: ${successful}
-  Failed: ${failed}
-  
-  To get all certificates, download each page:
-  Page 1: GET /api/certificates/paginated-zip?page=1&per_page=${perPage}
-  Page 2: GET /api/certificates/paginated-zip?page=2&per_page=${perPage}
-  ...
-  Page ${totalPages}: GET /api/certificates/paginated-zip?page=${totalPages}&per_page=${perPage}
-  `;
-  
-      archive.append(paginationInfo, { name: 'PAGINATION_INFO.txt' });
+      archive.append(infoContent, { name: 'GENERATION_INFO.txt' });
       await archive.finalize();
   
-      console.log(`✅ Page ${pageNum} completed. Success: ${successful}, Failed: ${failed}`);
+      console.log(`✅ Generation completed. Success: ${successful}, Failed: ${failed}`);
+      if (start_id || end_id) {
+        console.log(`🎯 ID Range: ${start_id || 'start'} to ${end_id || 'end'}`);
+      }
   
     } catch (error) {
-      console.error("❌ Paginated ZIP Error:", error);
+      console.error("❌ Certificate Generation Error:", error);
       if (!res.headersSent) {
-        res.status(500).json({ message: "Paginated generation failed", error: error.message });
+        res.status(500).json({ message: "Certificate generation failed", error: error.message });
       }
     }
   },
