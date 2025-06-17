@@ -141,7 +141,7 @@ function generateCertificateHTML(registration) {
         .certificate-inner {
             width: 100%;
             height: 100%;
-            padding: 30px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -150,47 +150,49 @@ function generateCertificateHTML(registration) {
         
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 0px;
         }
         
         .wsro-logo-container {
-            margin-bottom: 10px;
+            margin-bottom: -10px;
         }
         
         .wsro-logo {
             width: 100%;
-            max-width: 500px;
-            height: auto;
-            max-height: 150px;
+            max-width: 800px;
             object-fit: contain;
         }
         
         .certificate-title {
-            font-size: 42px;
+            font-size: 44px;
             font-weight: 500;
-            color: #333;
-            margin-bottom: 8px;
+            color: #3e3c3c;
+            margin-bottom: 15px;
             letter-spacing: 4px;
         }
         
         .participation-text {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 6px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 22px;
+            color: #414141;
+            margin-bottom:0px;
+            letter-spacing: 3px;
+           
         }
         
         .event-details {
-            font-size: 14px;
+            font-size: 22px;
             color: #333;
             margin-bottom: 20px;
+            letter-spacing: 2px;
+            font-weight: 500;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         
         .awarded-text {
-            font-size: 14px;
+            font-size: 16px;
             color: #666;
             margin-bottom: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         
         .participant-name {
@@ -199,7 +201,8 @@ function generateCertificateHTML(registration) {
             color: #333;
             padding-bottom: 8px;
             border-bottom: 2px dashed #731F15;
-            margin-bottom: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            
         }
         
         .content-section {
@@ -208,13 +211,16 @@ function generateCertificateHTML(registration) {
             flex-direction: column;
             justify-content: center;
             margin-bottom: 30px;
+            margin-top: 20px;
         }
         
         .participation-details {
-            text-align: center;
+           text-align: center;
+           font-weight: 500;
             font-size: 16px;
             color: #333;
-            line-height: 1.4;
+            letter-spacing: 0.8px;
+            line-height: 1.8;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         
@@ -233,7 +239,7 @@ function generateCertificateHTML(registration) {
         }
         
         .uin-text {
-            font-size: 11px;
+            font-size: 14px;
             font-weight: bold;
             color: #731F15;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -245,9 +251,7 @@ function generateCertificateHTML(registration) {
             justify-content: center;
             align-items: center;
         }
-        
-      
-        
+            
         .footer-section {
             display: flex;
             justify-content: space-between;
@@ -264,6 +268,12 @@ function generateCertificateHTML(registration) {
             width: 50px;
             height: 50px;
             object-fit: contain;
+        }
+
+        .chalik-logo{
+            height:100px;
+            width: 350px;
+            object-fit: cover;
         }
         
         .footer-right {
@@ -314,7 +324,7 @@ function generateCertificateHTML(registration) {
                         </div>
                         
                         <div class="certificate-title">CERTIFICATE</div>
-                        <div class="participation-text">OF PLACEMENT</div>
+                        <div class="participation-text">OF PARTICIPATION</div>
                         <div class="event-details">(WSRO IRAN NATIONAL COMPETITION 2025)</div>
                         <div class="awarded-text">This certificate is awarded to</div>
                         
@@ -324,16 +334,16 @@ function generateCertificateHTML(registration) {
                     <!-- Main Content -->
                     <div class="content-section">
                         <div class="participation-details">
-                            for winning <strong>${registration.grade_or_winning_rank}.</strong> rank <Br> in the WSRO IRAN National Competition 2025 on the date<br/>
-                            of <strong>21,22 & 23 May 2025</strong><br/>
-                            At <strong>${registration.school_institute}.</strong>
+                            for participating in the WSRO IRAN National Competition 2025 on the date<br>
+                            of <strong>21,22 & 23 May 2025</strong>
+                            <br>At <strong>${registration.school_institute}.</strong>
                         </div>
                     </div>
                     
                     <!-- Bottom Section -->
                     <div class="bottom-section">
                         <div class="left-section">
-                            <div class="uin-text">UIN:${registration.certificate_u_id}</div>
+                            <div class="uin-text">UIN: ${registration.certificate_u_id}</div>
                             <img 
                                 src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a00000b2df78936/view?project=67aee32f0028febbce2c&" 
                                 alt="WSRO Award Badge" 
@@ -362,7 +372,7 @@ function generateCertificateHTML(registration) {
                         
                         <div class="footer-right">
                             <img 
-                                src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a38003b1eca0b22/view?project=67aee32f0028febbce2c&" 
+                                src="https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/68516afc0026e43d7065/view?project=67aee32f0028febbce2c&" 
                                 alt="Chalik.net Logo" 
                                 class="chalik-logo"
                             />
@@ -374,6 +384,7 @@ function generateCertificateHTML(registration) {
     </div>
 </body>
 </html>
+  
   `;
 }
 module.exports = {
