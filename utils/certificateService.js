@@ -273,21 +273,20 @@ function generateCertificateHTML(certificateData) {
 
             <div class="certificate-title">CERTIFICATE</div>
             <div class="participation-text">OF PARTICIPATION</div>
-            <div class="event-details">(${certificateData.competitionName.toUpperCase()})</div>
+            <div class="event-details">(WSRO REGIONAL COMPETITION)</div>
             <div class="awarded-text">This certificate is awarded to</div>
 
             <div class="participant-name">${certificateData.participantName}</div>
-            ${certificateData.teamName ? `<div class="team-name">Team: ${certificateData.teamName}</div>` : ''}
+          
           </div>
 
           <!-- Main Content -->
           <div class="content-section">
             <div class="participation-details">
               In recognition of active participation in the <br />
-              <strong>${certificateData.competitionName}</strong>, conducted on
+              <strong>WSRO Regional Competition 2025</strong>, conducted on
               ${competitionDate} <br />at
               <strong>${certificateData.venue}</strong>
-              ${certificateData.position ? `<br /><br />Position: <strong>${certificateData.position}</strong>` : ''}
             </div>
           </div>
 
