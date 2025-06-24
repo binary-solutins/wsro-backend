@@ -45,24 +45,31 @@ function generateCertificateHTML(certificateData) {
         box-sizing: border-box;
       }
 
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
       body {
         font-family: "Times New Roman", serif;
         background: white;
         width: 210mm;
-        height: 330mm;
+        height: 297mm;
         margin: 0;
         padding: 0;
         overflow: hidden;
+        page-break-inside: avoid;
       }
 
       .certificate-container {
         width: 100%;
-        height: 100%;
+        height: 100vh;
         background: #731f15;
-        padding: 20px 0px;
+        padding: 15px;
         display: flex;
         justify-content: center;
         align-items: center;
+        box-sizing: border-box;
       }
 
       .certificate-border {
@@ -71,101 +78,106 @@ function generateCertificateHTML(certificateData) {
         border: 4px solid white;
         background: rgb(251, 250, 250);
         position: relative;
+        display: flex;
+        flex-direction: column;
       }
 
       .certificate-inner {
         width: 100%;
         height: 100%;
-        padding: 50px;
+        padding: 30px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         position: relative;
+        box-sizing: border-box;
       }
 
       .header {
         text-align: center;
-        margin-bottom: 0px;
+        flex-shrink: 0;
       }
 
       .wsro-logo-container {
-        margin-top: -50px;
-        margin-right: -50px;
+        margin-bottom: 20px;
       }
 
       .logo-right {
         display: flex;
-        justify-content: end;
+        justify-content: flex-end;
       }
       
       .wsro-logo {
-        width: 55%;
-        max-width: 800px;
+        width: 45%;
+        max-width: 300px;
+        height: auto;
         object-fit: contain;
-        margin-bottom: 50px;
       }
 
       .certificate-title {
-        font-size: 44px;
+        font-size: 36px;
         font-weight: 500;
         color: #3e3c3c;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
         letter-spacing: 4px;
       }
 
       .participation-text {
-        font-size: 22px;
+        font-size: 18px;
         color: #414141;
-        margin-bottom: 0px;
+        margin-bottom: 15px;
         letter-spacing: 3px;
       }
 
       .event-details {
-        font-size: 22px;
+        font-size: 18px;
         color: #333;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         letter-spacing: 2px;
         font-weight: 500;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
 
       .awarded-text {
-        font-size: 16px;
+        font-size: 14px;
         color: #666;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
 
       .participant-name {
-        font-size: 32px;
+        font-size: 28px;
         font-weight: bold;
         color: #333;
         padding-bottom: 8px;
         border-bottom: 2px dashed #731f15;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        margin-bottom: 5px;
       }
 
       .team-name {
-        font-size: 20px;
+        font-size: 16px;
         font-weight: 600;
         color: #731f15;
-        margin-top: 10px;
+        margin-top: 5px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
 
       .content-section {
+        flex: 1;
         display: flex;
         flex-direction: column;
         justify-content: center;
+        margin: 20px 0;
       }
 
       .participation-details {
         text-align: center;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 14px;
         color: #333;
         letter-spacing: 0.8px;
-        line-height: 1.8;
+        line-height: 1.6;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
 
@@ -173,65 +185,69 @@ function generateCertificateHTML(certificateData) {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
         padding: 0 20px;
+        flex-shrink: 0;
+      }
+
+      .award-badge {
+        height: 80px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      .signature-image {
+        height: 60px;
+        width: auto;
+        object-fit: contain;
       }
 
       .sponsors-section {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         padding: 0 10px;
+        flex-shrink: 0;
       }
 
       .sponsor-logo {
-        height: 80px;
+        height: 50px;
         width: auto;
         object-fit: contain;
       }
 
       .footer-section {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         align-items: flex-end;
-      }
-
-      .footer-left {
-        display: flex;
-        align-items: flex-end;
-      }
-
-      .triangle-image {
-        width: 50px;
-        height: 50px;
-        object-fit: contain;
+        flex-shrink: 0;
       }
 
       .footer-right {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 5px;
+        gap: 3px;
       }
 
       .contact-info {
-        font-size: 16px;
+        font-size: 12px;
         color: #333;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         text-align: left;
-        line-height: 1.4;
-        margin-top: 10px;
+        line-height: 1.3;
         font-weight: 500;
       }
 
       .contact-info svg {
-        background-color: red;
-        padding: 5px;
+        background-color: #731f15;
+        padding: 3px;
+        border-radius: 2px;
       }
 
       .contact-info p {
-        margin-top: 14px;
+        margin-top: 8px;
         font-weight: 500;
       }
 
@@ -246,11 +262,16 @@ function generateCertificateHTML(certificateData) {
         .certificate-container {
           width: 210mm;
           height: 297mm;
-          padding: 8px;
+          padding: 15px;
         }
 
         .certificate-inner {
-          padding: 50px;
+          padding: 30px;
+        }
+
+        * {
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
         }
       }
     </style>
@@ -273,20 +294,21 @@ function generateCertificateHTML(certificateData) {
 
             <div class="certificate-title">CERTIFICATE</div>
             <div class="participation-text">OF PARTICIPATION</div>
-            <div class="event-details">(WSRO REGIONAL COMPETITION)</div>
+            <div class="event-details">(${certificateData.competitionName.toUpperCase()})</div>
             <div class="awarded-text">This certificate is awarded to</div>
 
             <div class="participant-name">${certificateData.participantName}</div>
-          
+            ${certificateData.teamName ? `<div class="team-name">Team: ${certificateData.teamName}</div>` : ''}
           </div>
 
           <!-- Main Content -->
           <div class="content-section">
             <div class="participation-details">
               In recognition of active participation in the <br />
-              <strong>WSRO Regional Competition 2025</strong>, conducted on
+              <strong>${certificateData.competitionName}</strong>, conducted on
               ${competitionDate} <br />at
               <strong>${certificateData.venue}</strong>
+              ${certificateData.position ? `<br /><br />Position: <strong>${certificateData.position}</strong>` : ''}
             </div>
           </div>
 
@@ -337,7 +359,7 @@ function generateCertificateHTML(certificateData) {
               <div class="contact-info">
                 <!-- Phone -->
                 <p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 8px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
                     <path d="M6.62 10.79a15.464 15.464 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.21c1.2.48 2.53.74 3.88.74a1 1 0 011 1v3.49a1 1 0 01-1 1C9.94 22 2 14.06 2 4.5a1 1 0 011-1h3.49a1 1 0 011 1c0 1.35.25 2.68.74 3.88a1 1 0 01-.21 1.11l-2.2 2.2z"/>
                   </svg>
                   +91 99044 63224, +91 81287 28882
@@ -345,7 +367,7 @@ function generateCertificateHTML(certificateData) {
             
                 <!-- Email -->
                 <p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 8px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
                     <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                   </svg>
                   www.wsro.in, info@wsro.in
@@ -353,7 +375,7 @@ function generateCertificateHTML(certificateData) {
             
                 <!-- Location -->
                 <p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 8px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/>
                   </svg>
                   Happiness Reserves Foundation, Ahmedabad, India - 380058
@@ -376,7 +398,7 @@ async function generateCertificate(certificateData) {
   // Generate HTML content
   const htmlContent = generateCertificateHTML(certificateData);
 
-  // Configure PDF options
+  // Configure PDF options - optimized for single page
   const options = {
     format: 'A4',
     orientation: 'portrait',
@@ -387,7 +409,10 @@ async function generateCertificate(certificateData) {
       left: '0mm'
     },
     printBackground: true,
-    preferCSSPageSize: true
+    preferCSSPageSize: true,
+    displayHeaderFooter: false,
+    height: '297mm',
+    width: '210mm'
   };
 
   // Create file object for html-pdf-node
@@ -437,9 +462,7 @@ async function sendCertificateEmail(emailData) {
   return info;
 }
 
-
 module.exports = {
-    generateCertificate,
-    sendCertificateEmail
-  };
-  
+  generateCertificate,
+  sendCertificateEmail
+};
