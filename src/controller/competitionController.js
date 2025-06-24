@@ -1146,7 +1146,7 @@ module.exports = {
         try {
           // Get team and competition details
           const [teamResult] = await db.query(
-            `SELECT r.team_name, r.leader_email, r.member_emails, r.competition_id,
+            `SELECT r.team_name, r.member_emails, r.competition_id,
                     c.name AS competition_name, c.date, c.venue, c.level 
              FROM Registrations r
              JOIN Competitions c ON r.competition_id = c.id
@@ -1165,7 +1165,6 @@ module.exports = {
           const team = teamResult[0];
           const { 
             team_name, 
-            leader_email, 
             member_emails, 
             competition_id,
             competition_name, 
@@ -1185,7 +1184,7 @@ module.exports = {
             continue;
           }
   
-          const allEmails = [leader_email, ...memberEmails];
+          const allEmails =  [...memberEmails];
   
           // Process each team member
           for (const email of allEmails) {
@@ -1198,7 +1197,7 @@ module.exports = {
   
               // Determine participant name and position
               const participantName = team_name;
-              const position = email === leader_email ? "Team Leader" : "Team Member";
+              const position =  "Team Member";
   
               // Prepare certificate data
               const certificateData = {
