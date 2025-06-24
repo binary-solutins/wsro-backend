@@ -1256,7 +1256,6 @@ module.exports = {
               console.error(`Error processing certificate for ${email}:`, error);
               failed.push({
                 email: email,
-                name: participantName,
                 team_code: team_code,
                 error: error.message
               });
