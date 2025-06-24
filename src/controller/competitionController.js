@@ -28,14 +28,14 @@ async function uploadCertificateToAppwrite(pdfBuffer, fileName, certificateId) {
     // - Max 36 characters
     // - Only a-z, A-Z, 0-9, period, hyphen, underscore
     // - Cannot start with special character
-    
+
     let validFileId;
     if (certificateId) {
       // Clean the certificate ID to make it valid
       validFileId = certificateId
         .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace invalid chars with underscore
         .substring(0, 36); // Limit to 36 characters
-      
+
       // Ensure it doesn't start with a special character
       if (validFileId.match(/^[._-]/)) {
         validFileId = 'cert_' + validFileId.substring(5); // Replace first chars and keep within limit
@@ -44,14 +44,14 @@ async function uploadCertificateToAppwrite(pdfBuffer, fileName, certificateId) {
       // Generate a new valid UUID-style ID
       validFileId = uuidv4().replace(/-/g, '').substring(0, 32); // Remove hyphens and limit length
     }
-    
+
     const formData = new FormData();
     formData.append('fileId', validFileId);
     formData.append('file', pdfBuffer, {
       filename: fileName,
       contentType: 'application/pdf'
     });
-    
+
     const response = await axios.post(
       `${APPWRITE_ENDPOINT}/storage/buckets/${APPWRITE_BUCKET_ID}/files`,
       formData,
@@ -64,7 +64,7 @@ async function uploadCertificateToAppwrite(pdfBuffer, fileName, certificateId) {
         }
       }
     );
-    
+
     // Return the file URL based on the response
     const uploadedFile = response.data;
     return {
@@ -440,7 +440,7 @@ module.exports = {
       res.status(500).json({ message: "Server error", error: error.message });
     }
   },
-  
+
 
   createCompetition: async (req, res) => {
     const errors = validationResult(req);
@@ -597,73 +597,73 @@ module.exports = {
     }
   },
 
- registerForCompetition: async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+  registerForCompetition: async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  const {
-    competition_id,
-    team_name,
-    coach_mentor_name,
-    coach_mentor_organization,
-    coach_mentor_phone,
-    coach_mentor_email,
-    member_names,
-    member_ages,
-    member_emails,
-    member_phones,
-    member_states,
-    member_cities,
-    member_zipcodes,
-    member_institutions,
-    event_id,
-    no_of_students,
-    payment_id
-  } = req.body;
+    const {
+      competition_id,
+      team_name,
+      coach_mentor_name,
+      coach_mentor_organization,
+      coach_mentor_phone,
+      coach_mentor_email,
+      member_names,
+      member_ages,
+      member_emails,
+      member_phones,
+      member_states,
+      member_cities,
+      member_zipcodes,
+      member_institutions,
+      event_id,
+      no_of_students,
+      payment_id
+    } = req.body;
 
-  const connection = await db.getConnection();
-  await connection.beginTransaction();
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
 
-  try {
-    // ✅ Fetch event and competition names
-    const [[eventRow]] = await connection.query(
-      'SELECT title FROM Events WHERE id = ?',
-      [event_id]
-    );
-    const [[compRow]] = await connection.query(
-      'SELECT name FROM Competitions WHERE id = ?',
-      [competition_id]
-    );
-    
-    const eventName = eventRow?.title || ''; // 🔁 changed from eventRow.name
-    const compName = compRow?.name || '';
+    try {
+      // ✅ Fetch event and competition names
+      const [[eventRow]] = await connection.query(
+        'SELECT title FROM Events WHERE id = ?',
+        [event_id]
+      );
+      const [[compRow]] = await connection.query(
+        'SELECT name FROM Competitions WHERE id = ?',
+        [competition_id]
+      );
 
-    // ✅ Generate event prefix (first 3 capital letters of event name)
-    const eventPrefix = eventName.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
+      const eventName = eventRow?.title || ''; // 🔁 changed from eventRow.name
+      const compName = compRow?.name || '';
 
-    // ✅ Generate competition initials (first letter of first 3 valid words)
-    const compWords = compName.split(' ').filter(w => /^[a-zA-Z]/.test(w));
-    const compPrefix = compWords.slice(0, 3).map(w => w[0].toUpperCase()).join('');
+      // ✅ Generate event prefix (first 3 capital letters of event name)
+      const eventPrefix = eventName.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
 
-    // ✅ Get the current team count for the same event and competition
-    const [[{ count }]] = await connection.query(
-      'SELECT COUNT(*) AS count FROM Registrations WHERE event_id = ? AND competition_id = ?',
-      [event_id, competition_id]
-    );
+      // ✅ Generate competition initials (first letter of first 3 valid words)
+      const compWords = compName.split(' ').filter(w => /^[a-zA-Z]/.test(w));
+      const compPrefix = compWords.slice(0, 3).map(w => w[0].toUpperCase()).join('');
 
-    const teamNumber = count + 1;
-    const team_code = `WS/${eventPrefix}/${compPrefix}-${teamNumber}`;
+      // ✅ Get the current team count for the same event and competition
+      const [[{ count }]] = await connection.query(
+        'SELECT COUNT(*) AS count FROM Registrations WHERE event_id = ? AND competition_id = ?',
+        [event_id, competition_id]
+      );
 
-    // ✅ Generate participant IDs
-    const participant_id = member_names.map(
-      (_, i) => `${team_code}-P${(i + 1).toString().padStart(2, "0")}`
-    );
+      const teamNumber = count + 1;
+      const team_code = `WS/${eventPrefix}/${compPrefix}-${teamNumber}`;
 
-    // ✅ Insert registration
-    await connection.query(
-      `INSERT INTO Registrations (
+      // ✅ Generate participant IDs
+      const participant_id = member_names.map(
+        (_, i) => `${team_code}-P${(i + 1).toString().padStart(2, "0")}`
+      );
+
+      // ✅ Insert registration
+      await connection.query(
+        `INSERT INTO Registrations (
         competition_id, event_id, team_code, team_name,
         coach_mentor_name, coach_mentor_organization,
         coach_mentor_phone, coach_mentor_email,
@@ -672,342 +672,343 @@ module.exports = {
         member_zipcodes, member_institutions,
         no_of_students, participant_id, status, payment_status, payment_id
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)`,
-      [
-        competition_id,
-        event_id,
-        team_code,
-        team_name,
-        coach_mentor_name,
-        coach_mentor_organization,
-        coach_mentor_phone,
-        coach_mentor_email,
-        JSON.stringify(member_names),
-        JSON.stringify(member_ages),
-        JSON.stringify(member_emails),
-        JSON.stringify(member_phones),
-        JSON.stringify(member_states),
-        JSON.stringify(member_cities),
-        JSON.stringify(member_zipcodes),
-        JSON.stringify(member_institutions),
-        no_of_students,
-        JSON.stringify(participant_id),
-        payment_id
-      ]
-    );
-
-    await connection.commit();
-
-    // ✅ Send emails
-    try {
-      const membersList = member_names.map((name, index) => ({
-        name,
-        email: member_emails[index],
-        participant_id: participant_id[index]
-      }));
-
-      await Promise.all(
-        membersList.map(async (member) => {
-          if (member.email) {
-            await sendParticipantEmail({
-              email: member.email,
-              name: member.name,
-              team_name,
-              team_code,
-              participant_id: member.participant_id,
-              competition_name: compName,
-              event_name: eventName
-            });
-          }
-        })
+        [
+          competition_id,
+          event_id,
+          team_code,
+          team_name,
+          coach_mentor_name,
+          coach_mentor_organization,
+          coach_mentor_phone,
+          coach_mentor_email,
+          JSON.stringify(member_names),
+          JSON.stringify(member_ages),
+          JSON.stringify(member_emails),
+          JSON.stringify(member_phones),
+          JSON.stringify(member_states),
+          JSON.stringify(member_cities),
+          JSON.stringify(member_zipcodes),
+          JSON.stringify(member_institutions),
+          no_of_students,
+          JSON.stringify(participant_id),
+          payment_id
+        ]
       );
-    } catch (emailError) {
-      console.error("Email sending error:", emailError);
-    }
 
-    res.status(201).json({
-      message: "Registration successful",
-      team_code,
-      participant_id,
-    });
-  } catch (error) {
-    await connection.rollback();
-    console.error("Registration Error:", error);
-    res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
-  } finally {
-    connection.release();
-  }
-},
-  
-registerIranCompetition: async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+      await connection.commit();
 
-  const entries = req.body;
-
-  if (!Array.isArray(entries) || entries.length === 0) {
-    return res.status(400).json({ message: "Entries array is required" });
-  }
-
-  // Validate each entry - only full_name is required
-  for (const entry of entries) {
-    if (!entry.full_name || entry.full_name.trim() === '') {
-      return res.status(400).json({ message: "Full name is required for each entry" });
-    }
-    
-    // Optional age validation - only if provided
-    if (entry.age && (isNaN(entry.age) || entry.age < 1)) {
-      return res.status(400).json({ message: "Valid age is required if provided" });
-    }
-  }
-
-  const connection = await db.getConnection();
-  await connection.beginTransaction();
-
-  try {
-    // Get and lock sequence for certificate ID generation
-    const [seq] = await connection.query(
-      'SELECT current_val FROM iran_certificate_sequence FOR UPDATE'
-    );
-    const currentVal = seq[0].current_val;
-    const newVal = currentVal + entries.length;
-
-    // Generate certificate IDs in format WSROIR/25/PA/0001
-    const entriesWithCertId = entries.map((entry, index) => {
-      const sequenceNumber = currentVal + index + 1;
-      return {
-        full_name: entry.full_name?.trim() || null,
-        school_institute: entry.school_institute?.trim() || null,
-        dob: entry.dob || null,
-        age: entry.age || null,
-        course_name_competition_category: entry.course_name_competition_category?.trim() || null,
-        grade_or_winning_rank: entry.grade_or_winning_rank?.trim() || null,
-        certificate_u_id: `WSROIR/25/PA/${sequenceNumber.toString().padStart(4, '0')}`
-      };
-    });
-
-    // Update sequence
-    await connection.query(
-      'UPDATE iran_certificate_sequence SET current_val = ?',
-      [newVal]
-    );
-
-    // Prepare bulk insert - matching exact database structure
-    const values = entriesWithCertId.map(entry => [
-      entry.full_name,
-      entry.school_institute,
-      entry.dob,
-      entry.age,
-      entry.course_name_competition_category,
-      entry.grade_or_winning_rank,
-      entry.certificate_u_id
-    ]);
-
-    await connection.query(
-      `INSERT INTO iran_registrations
-      (full_name, school_institute, dob, age, course_name_competition_category, grade_or_winning_rank, certificate_u_id)
-      VALUES ?`,
-      [values]
-    );
-
-    await connection.commit();
-
-    res.status(201).json({
-      message: "Registrations added successfully",
-      entries: entriesWithCertId.map(e => ({
-        full_name: e.full_name,
-        certificate_u_id: e.certificate_u_id
-      }))
-    });
-  } catch (error) {
-    await connection.rollback();
-    console.error("Registration Error:", error);
-    res.status(500).json({
-      message: "Server error",
-      error: error.message
-    });
-  } finally {
-    connection.release();
-  }
-},
-
-generateIranCertificates: async (req, res) => {
-  const { certificate_ids } = req.body;
-
-  if (!Array.isArray(certificate_ids) || certificate_ids.length === 0) {
-    return res.status(400).json({ message: "Certificate IDs array is required" });
-  }
-
-  try {
-    // Fetch registration data for the certificate IDs
-    const placeholders = certificate_ids.map(() => '?').join(',');
-    const [registrations] = await db.query(
-      `SELECT * FROM iran_registrations WHERE certificate_u_id IN (${placeholders})`,
-      certificate_ids
-    );
-
-    if (registrations.length === 0) {
-      return res.status(404).json({ message: "No registrations found for provided certificate IDs" });
-    }
-
-    const certificates = [];
-    const uploadResults = [];
-
-    for (const registration of registrations) {
+      // ✅ Send emails
       try {
-        const certificateHtml = generateCertificateHTML(registration);
+        const membersList = member_names.map((name, index) => ({
+          name,
+          email: member_emails[index],
+          participant_id: participant_id[index]
+        }));
 
-        // Updated PDF generation options for better fitting
-        const options = {
-          format: 'A4',
-          printBackground: true,
-          margin: {
-            top: '0mm',
-            right: '0mm',
-            bottom: '0mm',
-            left: '0mm'
-          },
-          width: '210mm',
-          height: '297mm',
-          preferCSSPageSize: true,
-          displayHeaderFooter: false
-        };
-        
-        // Convert HTML to PDF
-        const pdfBuffer = await htmlToPdf.generatePdf(
-          { content: certificateHtml }, 
-          options
+        await Promise.all(
+          membersList.map(async (member) => {
+            if (member.email) {
+              await sendParticipantEmail({
+                email: member.email,
+                name: member.name,
+                team_name,
+                team_code,
+                participant_id: member.participant_id,
+                competition_name: compName,
+                event_name: eventName
+              });
+            }
+          })
         );
+      } catch (emailError) {
+        console.error("Email sending error:", emailError);
+      }
 
-        // Create filename using username (full_name) and certificate ID
-        const sanitizedName = registration.full_name.replace(/[^a-zA-Z0-9]/g, '_');
-        const fileName = `${sanitizedName}_${registration.certificate_u_id}.pdf`;
+      res.status(201).json({
+        message: "Registration successful",
+        team_code,
+        participant_id,
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error("Registration Error:", error);
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+      });
+    } finally {
+      connection.release();
+    }
+  },
 
-        // Upload to Appwrite
-        const uploadResult = await uploadCertificateToAppwrite(
-          pdfBuffer, 
-          fileName, 
-          registration.certificate_u_id
-        );
+  registerIranCompetition: async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-        if (uploadResult.success) {
-          // Update database with certificate URL
-          await db.query(
-            `UPDATE iran_registrations SET certificate_url = ? WHERE certificate_u_id = ?`,
-            [uploadResult.url, registration.certificate_u_id]
-          );
+    const entries = req.body;
 
-          certificates.push({
-            certificate_id: registration.certificate_u_id,
-            full_name: registration.full_name,
-            certificate_url: uploadResult.url,
-            file_id: uploadResult.fileId,
-            upload_status: 'success'
-          });
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return res.status(400).json({ message: "Entries array is required" });
+    }
 
-          uploadResults.push({
-            certificate_id: registration.certificate_u_id,
-            status: 'success',
-            url: uploadResult.url
-          });
-        } else {
-          // If upload fails, still return the certificate data but mark upload as failed
-          certificates.push({
-            certificate_id: registration.certificate_u_id,
-            full_name: registration.full_name,
-            pdf: pdfBuffer.toString('base64'), // Fallback to base64
-            upload_status: 'failed',
-            upload_error: uploadResult.error
-          });
+    // Validate each entry - only full_name is required
+    for (const entry of entries) {
+      if (!entry.full_name || entry.full_name.trim() === '') {
+        return res.status(400).json({ message: "Full name is required for each entry" });
+      }
 
-          uploadResults.push({
-            certificate_id: registration.certificate_u_id,
-            status: 'failed',
-            error: uploadResult.error
-          });
-        }
-      } catch (error) {
-        console.error(`Error processing certificate ${registration.certificate_u_id}:`, error);
-        certificates.push({
-          certificate_id: registration.certificate_u_id,
-          full_name: registration.full_name,
-          upload_status: 'error',
-          error: error.message
-        });
-
-        uploadResults.push({
-          certificate_id: registration.certificate_u_id,
-          status: 'error',
-          error: error.message
-        });
+      // Optional age validation - only if provided
+      if (entry.age && (isNaN(entry.age) || entry.age < 1)) {
+        return res.status(400).json({ message: "Valid age is required if provided" });
       }
     }
 
-    res.status(200).json({
-      message: "Certificates generated and upload attempted",
-      total_processed: certificate_ids.length,
-      successful_uploads: uploadResults.filter(r => r.status === 'success').length,
-      failed_uploads: uploadResults.filter(r => r.status !== 'success').length,
-      certificates: certificates,
-      upload_summary: uploadResults
-    });
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
 
-  } catch (error) {
-    console.error("Certificate Generation Error:", error);
-    res.status(500).json({
-      message: "Server error",
-      error: error.message
-    });
-  }
-},
+    try {
+      // Get and lock sequence for certificate ID generation
+      const [seq] = await connection.query(
+        'SELECT current_val FROM iran_certificate_sequence FOR UPDATE'
+      );
+      const currentVal = seq[0].current_val;
+      const newVal = currentVal + entries.length;
 
-// New method to get certificate download URL from Appwrite
-getCertificateDownloadUrl: async (req, res) => {
-  const { certificate_u_id } = req.params;
+      // Generate certificate IDs in format WSROIR/25/PA/0001
+      const entriesWithCertId = entries.map((entry, index) => {
+        const sequenceNumber = currentVal + index + 1;
+        return {
+          full_name: entry.full_name?.trim() || null,
+          school_institute: entry.school_institute?.trim() || null,
+          dob: entry.dob || null,
+          age: entry.age || null,
+          course_name_competition_category: entry.course_name_competition_category?.trim() || null,
+          grade_or_winning_rank: entry.grade_or_winning_rank?.trim() || null,
+          certificate_u_id: `WSROIR/25/PA/${sequenceNumber.toString().padStart(4, '0')}`
+        };
+      });
 
-  if (!certificate_u_id) {
-    return res.status(400).json({ message: "Certificate ID is required" });
-  }
+      // Update sequence
+      await connection.query(
+        'UPDATE iran_certificate_sequence SET current_val = ?',
+        [newVal]
+      );
 
-  try {
-    const [result] = await db.query(
-      `SELECT certificate_url, full_name FROM iran_registrations WHERE certificate_u_id = ?`,
-      [certificate_u_id]
-    );
+      // Prepare bulk insert - matching exact database structure
+      const values = entriesWithCertId.map(entry => [
+        entry.full_name,
+        entry.school_institute,
+        entry.dob,
+        entry.age,
+        entry.course_name_competition_category,
+        entry.grade_or_winning_rank,
+        entry.certificate_u_id
+      ]);
 
-    if (!result || result.length === 0) {
-      return res.status(404).json({ message: "Certificate not found" });
+      await connection.query(
+        `INSERT INTO iran_registrations
+      (full_name, school_institute, dob, age, course_name_competition_category, grade_or_winning_rank, certificate_u_id)
+      VALUES ?`,
+        [values]
+      );
+
+      await connection.commit();
+
+      res.status(201).json({
+        message: "Registrations added successfully",
+        entries: entriesWithCertId.map(e => ({
+          full_name: e.full_name,
+          certificate_u_id: e.certificate_u_id
+        }))
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error("Registration Error:", error);
+      res.status(500).json({
+        message: "Server error",
+        error: error.message
+      });
+    } finally {
+      connection.release();
+    }
+  },
+
+  generateIranCertificates: async (req, res) => {
+    const { certificate_ids } = req.body;
+
+    if (!Array.isArray(certificate_ids) || certificate_ids.length === 0) {
+      return res.status(400).json({ message: "Certificate IDs array is required" });
     }
 
-    if (!result[0].certificate_url) {
-      return res.status(404).json({ message: "Certificate not yet uploaded" });
+    try {
+      // Fetch registration data for the certificate IDs
+      const placeholders = certificate_ids.map(() => '?').join(',');
+      const [registrations] = await db.query(
+        `SELECT * FROM iran_registrations WHERE certificate_u_id IN (${placeholders})`,
+        certificate_ids
+      );
+
+      if (registrations.length === 0) {
+        return res.status(404).json({ message: "No registrations found for provided certificate IDs" });
+      }
+
+      const certificates = [];
+      const uploadResults = [];
+
+      for (const registration of registrations) {
+        try {
+          const certificateHtml = generateCertificateHTML(registration);
+
+          // Updated PDF generation options for better fitting
+          const options = {
+            format: 'A4',
+            printBackground: true,
+            margin: {
+              top: '0mm',
+              right: '0mm',
+              bottom: '0mm',
+              left: '0mm'
+            },
+            width: '210mm',
+            height: '297mm',
+            preferCSSPageSize: true,
+            displayHeaderFooter: false
+          };
+
+          // Convert HTML to PDF
+          const pdfBuffer = await htmlToPdf.generatePdf(
+            { content: certificateHtml },
+            options
+          );
+
+          // Create filename using username (full_name) and certificate ID
+          const sanitizedName = registration.full_name.replace(/[^a-zA-Z0-9]/g, '_');
+          const fileName = `${sanitizedName}_${registration.certificate_u_id}.pdf`;
+
+          // Upload to Appwrite
+          const uploadResult = await uploadCertificateToAppwrite(
+            pdfBuffer,
+            fileName,
+            registration.certificate_u_id
+          );
+
+          if (uploadResult.success) {
+            // Update database with certificate URL
+            await db.query(
+              `UPDATE iran_registrations SET certificate_url = ? WHERE certificate_u_id = ?`,
+              [uploadResult.url, registration.certificate_u_id]
+            );
+
+            certificates.push({
+              certificate_id: registration.certificate_u_id,
+              full_name: registration.full_name,
+              certificate_url: uploadResult.url,
+              file_id: uploadResult.fileId,
+              upload_status: 'success'
+            });
+
+            uploadResults.push({
+              certificate_id: registration.certificate_u_id,
+              status: 'success',
+              url: uploadResult.url
+            });
+          } else {
+            // If upload fails, still return the certificate data but mark upload as failed
+            certificates.push({
+              certificate_id: registration.certificate_u_id,
+              full_name: registration.full_name,
+              pdf: pdfBuffer.toString('base64'), // Fallback to base64
+              upload_status: 'failed',
+              upload_error: uploadResult.error
+            });
+
+            uploadResults.push({
+              certificate_id: registration.certificate_u_id,
+              status: 'failed',
+              error: uploadResult.error
+            });
+          }
+        } catch (error) {
+          console.error(`Error processing certificate ${registration.certificate_u_id}:`, error);
+          certificates.push({
+            certificate_id: registration.certificate_u_id,
+            full_name: registration.full_name,
+            upload_status: 'error',
+            error: error.message
+          });
+
+          uploadResults.push({
+            certificate_id: registration.certificate_u_id,
+            status: 'error',
+            error: error.message
+          });
+        }
+      }
+
+      res.status(200).json({
+        message: "Certificates generated and upload attempted",
+        total_processed: certificate_ids.length,
+        successful_uploads: uploadResults.filter(r => r.status === 'success').length,
+        failed_uploads: uploadResults.filter(r => r.status !== 'success').length,
+        certificates: certificates,
+        upload_summary: uploadResults
+      });
+
+    } catch (error) {
+      console.error("Certificate Generation Error:", error);
+      res.status(500).json({
+        message: "Server error",
+        error: error.message
+      });
+    }
+  },
+
+  // New method to get certificate download URL from Appwrite
+  getCertificateDownloadUrl: async (req, res) => {
+    const { certificate_u_id } = req.params;
+
+    if (!certificate_u_id) {
+      return res.status(400).json({ message: "Certificate ID is required" });
     }
 
-    res.status(200).json({
-      message: "Certificate URL retrieved successfully",
-      certificate_id: certificate_u_id,
-      full_name: result[0].full_name,
-      download_url: result[0].certificate_url
-    });
-  } catch (error) {
-    console.error("Error fetching certificate URL:", error);
-    res.status(500).json({
-      message: "Server error",
-      error: error.message
-    });
-  }
-},
+    try {
+      const [result] = await db.query(
+        `SELECT certificate_url, full_name FROM iran_registrations WHERE certificate_u_id = ?`,
+        [certificate_u_id]
+      );
+
+      if (!result || result.length === 0) {
+        return res.status(404).json({ message: "Certificate not found" });
+      }
+
+      if (!result[0].certificate_url) {
+        return res.status(404).json({ message: "Certificate not yet uploaded" });
+      }
+
+      res.status(200).json({
+        message: "Certificate URL retrieved successfully",
+        certificate_id: certificate_u_id,
+        full_name: result[0].full_name,
+        download_url: result[0].certificate_url
+      });
+    } catch (error) {
+      console.error("Error fetching certificate URL:", error);
+      res.status(500).json({
+        message: "Server error",
+        error: error.message
+      });
+    }
+  },
+
   getIranRegistrationByCertificateId: async (req, res) => {
     const { certificate_u_id } = req.body;
-  
+
     if (!certificate_u_id) {
       return res.status(400).json({ message: "certificate_u_id is required" });
     }
-  
+
     try {
       const [result] = await db.query(
         `SELECT 
@@ -1023,11 +1024,11 @@ getCertificateDownloadUrl: async (req, res) => {
         WHERE certificate_u_id = ?`,
         [certificate_u_id]
       );
-  
+
       if (!result || result.length === 0) {
         return res.status(404).json({ message: "Registration not found" });
       }
-  
+
       res.status(200).json({
         message: "Registration details retrieved successfully",
         data: result[0]
@@ -1047,10 +1048,10 @@ getCertificateDownloadUrl: async (req, res) => {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
       const offset = (page - 1) * limit;
-  
+
       // Get optional filters
       const { search, sort_by = 'id', sort_order = 'DESC' } = req.query;
-  
+
       // Base query
       let query = `
         SELECT 
@@ -1064,7 +1065,7 @@ getCertificateDownloadUrl: async (req, res) => {
           certificate_u_id
         FROM iran_registrations
       `;
-  
+
       // Add search filter if provided
       const params = [];
       if (search) {
@@ -1076,20 +1077,20 @@ getCertificateDownloadUrl: async (req, res) => {
         const searchTerm = `%${search}%`;
         params.push(searchTerm, searchTerm, searchTerm, searchTerm);
       }
-  
+
       // Add sorting
       const validSortColumns = ['id', 'full_name', 'age', 'dob', 'certificate_u_id'];
       const sortColumn = validSortColumns.includes(sort_by) ? sort_by : 'id';
       const order = sort_order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
       query += ` ORDER BY ${sortColumn} ${order}`;
-  
+
       // Add pagination
       query += ` LIMIT ? OFFSET ?`;
       params.push(limit, offset);
-  
+
       // Execute query
       const [registrations] = await db.query(query, params);
-  
+
       // Get total count for pagination info
       let countQuery = `SELECT COUNT(*) as total FROM iran_registrations`;
       if (search) {
@@ -1099,12 +1100,12 @@ getCertificateDownloadUrl: async (req, res) => {
           course_name_competition_category LIKE ? OR 
           certificate_u_id LIKE ?`;
       }
-      const [totalResult] = await db.query(countQuery, search ? 
+      const [totalResult] = await db.query(countQuery, search ?
         [`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`] : []);
-  
+
       const total = totalResult[0].total;
       const totalPages = Math.ceil(total / limit);
-  
+
       res.status(200).json({
         message: "Registrations retrieved successfully",
         data: registrations,
@@ -1127,81 +1128,166 @@ getCertificateDownloadUrl: async (req, res) => {
   },
 
   sendBulkCertificates: async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { competitionId, participants } = req.body;
-
-    const [competition] = await db.query(
-      "SELECT name FROM Competitions WHERE id = ?",
-      [competitionId]
-    );
-
-    if (!competition[0]) {
-      return res.status(404).json({ message: "Competition not found" });
-    }
-
-    const results = [];
-    const failed = [];
-
-    for (const participant of participants) {
-      try {
-        const certificateId = `CERT-${competitionId}-${Date.now()}-${Math.random()
-          .toString(36)
-          .substr(2, 4)}`;
-        const certificatePath = await generateCertificate({
-          name: participant.name,
-          competitionName: competition[0].name,
-          position: participant.position,
-          certificateId,
-        });
-
-        await sendCertificateEmail({
-          email: participant.email,
-          name: participant.name,
-          competitionName: competition[0].name,
-          certificatePath,
-          certificateId,
-        });
-
-        await db.query(
-          `INSERT INTO Certificates (
-            competition_id, participant_name, participant_email,
-            certificate_id, position, created_at
-          ) VALUES (?, ?, ?, ?, ?, NOW())`,
-          [
-            competitionId,
-            participant.name,
-            participant.email,
-            certificateId,
-            participant.position,
-          ]
-        );
-
-        await fs.unlink(certificatePath);
-
-        results.push({
-          email: participant.email,
-          name: participant.name,
-          status: "success",
-          certificateId,
-        });
-      } catch (error) {
-        failed.push({
-          email: participant.email,
-          name: participant.name,
-          error: error.message,
+    try {
+      const { team_codes } = req.body;
+  
+      // Validate required fields
+      if (!team_codes || !Array.isArray(team_codes) || team_codes.length === 0) {
+        return res.status(400).json({ 
+          message: "team_codes should be a non-empty array" 
         });
       }
+  
+      const results = [];
+      const failed = [];
+  
+      // Process each team code
+      for (const team_code of team_codes) {
+        try {
+          // Get team and competition details
+          const [teamResult] = await db.query(
+            `SELECT r.team_name, r.leader_email, r.member_emails, r.competition_id,
+                    c.name AS competition_name, c.date, c.venue, c.level 
+             FROM Registrations r
+             JOIN Competitions c ON r.competition_id = c.id
+             WHERE r.team_code = ? AND c.is_deleted = 0`,
+            [team_code]
+          );
+  
+          if (!teamResult || teamResult.length === 0) {
+            failed.push({
+              team_code,
+              error: "No team found with the given team code or competition not found"
+            });
+            continue;
+          }
+  
+          const team = teamResult[0];
+          const { 
+            team_name, 
+            leader_email, 
+            member_emails, 
+            competition_id,
+            competition_name, 
+            date, 
+            venue, 
+            level 
+          } = team;
+  
+          let memberEmails = [];
+          try {
+            memberEmails = JSON.parse(member_emails) || [];
+          } catch (e) {
+            failed.push({
+              team_code,
+              error: "Invalid member_emails format in database"
+            });
+            continue;
+          }
+  
+          const allEmails = [leader_email, ...memberEmails];
+  
+          // Process each team member
+          for (const email of allEmails) {
+            try {
+              // Generate unique certificate ID
+              const certificateId = `WSRO-${competition_id}-${Date.now()}-${Math.random()
+                .toString(36)
+                .substr(2, 6)
+                .toUpperCase()}`;
+  
+              // Determine participant name and position
+              const participantName = team_name;
+              const position = email === leader_email ? "Team Leader" : "Team Member";
+  
+              // Prepare certificate data
+              const certificateData = {
+                certificateId,
+                participantName,
+                teamName: team_name,
+                competitionName: competition_name,
+                competitionDate: date,
+                venue: venue,
+                level: level,
+                position: position
+              };
+  
+              // Generate certificate PDF
+              const certificatePath = await generateCertificate(certificateData);
+  
+              // Send email with certificate
+              await sendCertificateEmail({
+                email: email,
+                name: participantName,
+                competitionName: competition_name,
+                certificatePath,
+                certificateId
+              });
+  
+              // Save certificate record to database
+              await db.query(
+                `INSERT INTO Certificates (
+                  competition_id, participant_name, participant_email,
+                  certificate_id, position, team_name, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+                [
+                  competition_id,
+                  participantName,
+                  email,
+                  certificateId,
+                  position,
+                  team_name
+                ]
+              );
+  
+              // Clean up temporary file
+              await fs.unlink(certificatePath);
+  
+              results.push({
+                email: email,
+                name: participantName,
+                teamName: team_name,
+                team_code: team_code,
+                position: position,
+                status: "success",
+                certificateId
+              });
+  
+            } catch (error) {
+              console.error(`Error processing certificate for ${email}:`, error);
+              failed.push({
+                email: email,
+                name: participantName,
+                team_code: team_code,
+                error: error.message
+              });
+            }
+          }
+  
+        } catch (error) {
+          console.error(`Error processing team code ${team_code}:`, error);
+          failed.push({
+            team_code,
+            error: error.message
+          });
+        }
+      }
+  
+      res.status(200).json({
+        message: "Certificate generation and sending completed",
+        successful: results.length,
+        failed: failed.length,
+        results: results,
+        failures: failed
+      });
+  
+    } catch (error) {
+      console.error('Error in sendBulkCertificates:', error);
+      res.status(500).json({
+        message: "Internal server error",
+        error: error.message
+      });
     }
-
-    res.status(200).json({
-      message: "Certificate generation and sending completed",
-      successful: results,
-      failed: failed,
-    });
   },
 
   sendTeamCertificates: async (req, res) => {
@@ -1315,15 +1401,15 @@ getCertificateDownloadUrl: async (req, res) => {
     }
   },
 
-   resendEventPassEmail: async (req, res) => {
+  resendEventPassEmail: async (req, res) => {
     // Validate request
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-  
+
     const { email } = req.body;
-  
+
     try {
       // Find all registrations where this email exists in member_emails
       const [registrations] = await db.query(
@@ -1334,33 +1420,33 @@ getCertificateDownloadUrl: async (req, res) => {
          WHERE JSON_CONTAINS(r.member_emails, ?)`,
         [JSON.stringify(email)]
       );
-  
+
       if (!registrations || registrations.length === 0) {
         return res.status(404).json({
           message: "No registrations found for this email address"
         });
       }
-  
+
       // Track which teams the participant is part of for response
       const teamResults = [];
-  
+
       // Process each registration
       for (const registration of registrations) {
         // Parse JSON fields
         const memberNames = JSON.parse(registration.member_names);
         const memberEmails = JSON.parse(registration.member_emails);
         const participantIds = JSON.parse(registration.participant_id);
-        
+
         // Find the participant's index in this team
-        const participantIndex = memberEmails.findIndex(memberEmail => 
+        const participantIndex = memberEmails.findIndex(memberEmail =>
           memberEmail.toLowerCase() === email.toLowerCase()
         );
-        
+
         if (participantIndex !== -1) {
           // Get participant details
           const name = memberNames[participantIndex];
           const participant_id = participantIds[participantIndex];
-          
+
           // Send email to the participant
           await sendParticipantEmail({
             email,
@@ -1371,7 +1457,7 @@ getCertificateDownloadUrl: async (req, res) => {
             competition_name: registration.competition_name,
             event_name: registration.event_name
           });
-          
+
           teamResults.push({
             team_name: registration.team_name,
             team_code: registration.team_code,
@@ -1380,13 +1466,13 @@ getCertificateDownloadUrl: async (req, res) => {
           });
         }
       }
-  
+
       // Return success response
       res.status(200).json({
         message: "Event pass email(s) resent successfully",
         teams: teamResults
       });
-      
+
     } catch (error) {
       console.error("Error resending event pass email:", error);
       res.status(500).json({
@@ -1394,7 +1480,7 @@ getCertificateDownloadUrl: async (req, res) => {
         error: error.message
       });
     }
-   },
+  },
 
   toggleCompetitionIsDeleted: async (req, res) => {
     const { competition_id } = req.body;
@@ -1435,36 +1521,37 @@ getCertificateDownloadUrl: async (req, res) => {
         .json({ message: "Server error", error: error.message });
     }
   },
+
   bulkRegisterForCompetition: async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Excel file is required" });
       }
-  
+
       const { competition_id, event_id } = req.body;
-  
+
       if (!competition_id || !event_id) {
-        return res.status(400).json({ 
-          message: "competition_id and event_id are required" 
+        return res.status(400).json({
+          message: "competition_id and event_id are required"
         });
       }
-  
+
       // Read Excel file
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
-  
+
       if (!jsonData || jsonData.length === 0) {
         return res.status(400).json({ message: "Excel file is empty" });
       }
-  
+
       const connection = await db.getConnection();
       await connection.beginTransaction();
-  
+
       const results = [];
       const errors = [];
-  
+
       try {
         // Fetch event and competition names once for all registrations
         const [[eventRow]] = await connection.query(
@@ -1475,7 +1562,7 @@ getCertificateDownloadUrl: async (req, res) => {
           'SELECT name FROM Competitions WHERE id = ?',
           [competition_id]
         );
-        
+
         const eventName = eventRow?.title || '';
         const compName = compRow?.name || '';
 
@@ -1496,20 +1583,20 @@ getCertificateDownloadUrl: async (req, res) => {
         for (let i = 0; i < jsonData.length; i++) {
           const row = jsonData[i];
           const rowNumber = i + 2; // +2 because Excel rows start from 1 and we have header
-  
+
           try {
             // Validate required fields
             const requiredFields = [
               'team_name', 'coach_mentor_name', 'coach_mentor_organization',
               'coach_mentor_phone', 'coach_mentor_email', 'no_of_students'
             ];
-  
+
             for (const field of requiredFields) {
               if (!row[field]) {
                 throw new Error(`${field} is required`);
               }
             }
-  
+
             // Parse member data
             const memberNames = [];
             const memberAges = [];
@@ -1519,9 +1606,9 @@ getCertificateDownloadUrl: async (req, res) => {
             const memberCities = [];
             const memberZipcodes = [];
             const memberInstitutions = [];
-  
+
             const noOfStudents = parseInt(row.no_of_students);
-            
+
             if (isNaN(noOfStudents) || noOfStudents <= 0) {
               throw new Error("no_of_students must be a positive number");
             }
@@ -1535,7 +1622,7 @@ getCertificateDownloadUrl: async (req, res) => {
               const city = row[`member_${j}_city`];
               const zipcode = row[`member_${j}_zipcode`];
               const institution = row[`member_${j}_institution`];
-  
+
               // Basic validation for member fields
               if (!name || !age || !email) {
                 throw new Error(`Member ${j} name, age, and email are required`);
@@ -1550,15 +1637,15 @@ getCertificateDownloadUrl: async (req, res) => {
               memberZipcodes.push(zipcode || '');
               memberInstitutions.push(institution || '');
             }
-  
+
             // Generate team code using the fetched prefixes and current team number
             const team_code = `WS/${eventPrefix}/${compPrefix}-${currentTeamNumber}`;
-            
+
             // Generate participant IDs
             const participant_id = memberNames.map(
               (_, idx) => `${team_code}-P${(idx + 1).toString().padStart(2, "0")}`
             );
-  
+
             // Insert registration
             await connection.query(
               `INSERT INTO Registrations (
@@ -1592,7 +1679,7 @@ getCertificateDownloadUrl: async (req, res) => {
                 row.payment_id || null
               ]
             );
-            
+
             // Increment team number for the next registration in the bulk upload
             currentTeamNumber++;
 
@@ -1602,7 +1689,7 @@ getCertificateDownloadUrl: async (req, res) => {
               team_code: team_code,
               status: 'success'
             });
-  
+
             // Send emails (optional - you can comment this out for bulk operations)
             try {
               const membersList = memberNames.map((name, index) => ({
@@ -1610,7 +1697,7 @@ getCertificateDownloadUrl: async (req, res) => {
                 email: memberEmails[index],
                 participant_id: participant_id[index]
               }));
-  
+
               await Promise.all(
                 membersList.map(async (member) => {
                   if (member.email) {
@@ -1629,7 +1716,7 @@ getCertificateDownloadUrl: async (req, res) => {
             } catch (emailError) {
               console.error("Email sending error for team:", row.team_name, emailError);
             }
-  
+
           } catch (rowError) {
             errors.push({
               row: rowNumber,
@@ -1638,9 +1725,9 @@ getCertificateDownloadUrl: async (req, res) => {
             });
           }
         }
-  
+
         await connection.commit();
-  
+
         res.status(201).json({
           message: "Bulk registration completed",
           total_processed: jsonData.length,
@@ -1649,14 +1736,14 @@ getCertificateDownloadUrl: async (req, res) => {
           results: results,
           errors: errors
         });
-  
+
       } catch (error) {
         await connection.rollback();
         throw error;
       } finally {
         connection.release();
       }
-  
+
     } catch (error) {
       console.error("Bulk Registration Error:", error);
       res.status(500).json({
@@ -1668,41 +1755,41 @@ getCertificateDownloadUrl: async (req, res) => {
 
   generatePaginatedZipCertificates: async (req, res) => {
     try {
-      const { 
-        page = 1, 
+      const {
+        page = 1,
         per_page = 50, // Process 50 certificates per ZIP
-        search = null, 
+        search = null,
         certificate_ids = null,
         start_id = null,  // New parameter for ID range start
         end_id = null     // New parameter for ID range end
       } = req.query;
-  
+
       const pageNum = parseInt(page);
       const perPage = Math.min(parseInt(per_page), 100); // Max 100 per ZIP
       const offset = (pageNum - 1) * perPage;
-  
+
       // Build query with pagination
       let query = `SELECT * FROM iran_registrations`;
       let countQuery = `SELECT COUNT(*) as total FROM iran_registrations`;
       let params = [];
       let conditions = [];
-  
+
       // Handle ID range filtering
       if (start_id && end_id) {
         const startIdNum = parseInt(start_id);
         const endIdNum = parseInt(end_id);
-        
+
         if (startIdNum > endIdNum) {
-          return res.status(400).json({ 
-            message: "start_id must be less than or equal to end_id" 
+          return res.status(400).json({
+            message: "start_id must be less than or equal to end_id"
           });
         }
-        
+
         conditions.push(`id BETWEEN ? AND ?`);
         params.push(startIdNum, endIdNum);
         console.log(`🎯 Filtering by ID range: ${startIdNum} to ${endIdNum}`);
       }
-      
+
       // Handle single ID parameter (if only start_id is provided)
       else if (start_id && !end_id) {
         const startIdNum = parseInt(start_id);
@@ -1710,7 +1797,7 @@ getCertificateDownloadUrl: async (req, res) => {
         params.push(startIdNum);
         console.log(`🎯 Filtering from ID: ${startIdNum} onwards`);
       }
-      
+
       // Handle end ID parameter (if only end_id is provided)
       else if (!start_id && end_id) {
         const endIdNum = parseInt(end_id);
@@ -1718,7 +1805,7 @@ getCertificateDownloadUrl: async (req, res) => {
         params.push(endIdNum);
         console.log(`🎯 Filtering up to ID: ${endIdNum}`);
       }
-  
+
       // Handle search functionality
       if (search) {
         const searchCondition = `(
@@ -1731,7 +1818,7 @@ getCertificateDownloadUrl: async (req, res) => {
         const searchTerm = `%${search}%`;
         params.push(searchTerm, searchTerm, searchTerm, searchTerm);
       }
-  
+
       // Handle specific certificate IDs
       if (certificate_ids) {
         const ids = certificate_ids.split(',').map(id => id.trim());
@@ -1739,19 +1826,19 @@ getCertificateDownloadUrl: async (req, res) => {
         conditions.push(`certificate_u_id IN (${placeholders})`);
         params.push(...ids);
       }
-  
+
       // Apply WHERE conditions if any exist
       if (conditions.length > 0) {
         const whereClause = ` WHERE ${conditions.join(' AND ')}`;
         query += whereClause;
         countQuery += whereClause;
       }
-  
+
       // Get total count
       const [countResult] = await db.query(countQuery, params);
       const totalRecords = countResult[0].total;
       const totalPages = Math.ceil(totalRecords / perPage);
-  
+
       // Add pagination (only if not using ID range)
       if (!start_id && !end_id) {
         query += ` ORDER BY id DESC LIMIT ? OFFSET ?`;
@@ -1761,9 +1848,9 @@ getCertificateDownloadUrl: async (req, res) => {
         query += ` ORDER BY id ASC LIMIT ? OFFSET ?`;
         params.push(perPage, offset);
       }
-  
+
       const [registrations] = await db.query(query, params);
-  
+
       if (registrations.length === 0) {
         let message = `No records found`;
         if (start_id || end_id) {
@@ -1771,8 +1858,8 @@ getCertificateDownloadUrl: async (req, res) => {
         } else {
           message += ` for page ${pageNum}`;
         }
-        
-        return res.status(404).json({ 
+
+        return res.status(404).json({
           message,
           pagination: {
             current_page: pageNum,
@@ -1783,7 +1870,7 @@ getCertificateDownloadUrl: async (req, res) => {
           }
         });
       }
-  
+
       // Determine filename based on filtering type
       let filename;
       if (start_id && end_id) {
@@ -1795,21 +1882,21 @@ getCertificateDownloadUrl: async (req, res) => {
       } else {
         filename = `certificates_page_${pageNum}_of_${totalPages}.zip`;
       }
-  
+
       console.log(`📦 Generating ZIP: ${filename} (${registrations.length} certificates)`);
-  
+
       // Set response headers
       res.setHeader('Content-Type', 'application/zip');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  
+
       // Create ZIP
       const archive = archiver('zip', {
         zlib: { level: 1, memLevel: 1 },
         store: true
       });
-  
+
       archive.pipe(res);
-  
+
       const pdfOptions = {
         format: 'A4',
         printBackground: true,
@@ -1825,33 +1912,33 @@ getCertificateDownloadUrl: async (req, res) => {
           '--max-old-space-size=256'
         ]
       };
-  
+
       let successful = 0;
       let failed = 0;
-  
+
       // Process certificates one by one
       for (const registration of registrations) {
         try {
           const certificateHtml = generateCertificateHTML(registration);
           const pdfBuffer = await htmlToPdf.generatePdf({ content: certificateHtml }, pdfOptions);
-          
+
           const sanitizedName = registration.full_name
             .replace(/[^a-zA-Z0-9\s]/g, '')
             .replace(/\s+/g, '_')
             .substring(0, 30);
-          
+
           const fileName = `${sanitizedName}_${registration.certificate_u_id}_ID_${registration.id}.pdf`;
           archive.append(pdfBuffer, { name: fileName });
-          
+
           successful++;
-          
+
         } catch (error) {
           console.error(`❌ Error: ${registration.certificate_u_id} (ID: ${registration.id})`, error.message);
           failed++;
           archive.append(`Error: ${error.message}`, { name: `ERROR_${registration.certificate_u_id}_ID_${registration.id}.txt` });
         }
       }
-  
+
       // Add info file with details
       let infoContent;
       if (start_id || end_id) {
@@ -1901,15 +1988,15 @@ Or use ID ranges:
 - ID 33 to 56: GET /api/certificates/paginated-zip?start_id=33&end_id=56
 `;
       }
-  
+
       archive.append(infoContent, { name: 'GENERATION_INFO.txt' });
       await archive.finalize();
-  
+
       console.log(`✅ Generation completed. Success: ${successful}, Failed: ${failed}`);
       if (start_id || end_id) {
         console.log(`🎯 ID Range: ${start_id || 'start'} to ${end_id || 'end'}`);
       }
-  
+
     } catch (error) {
       console.error("❌ Certificate Generation Error:", error);
       if (!res.headersSent) {
