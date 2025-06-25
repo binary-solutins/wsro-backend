@@ -54,7 +54,7 @@ function generateCertificateHTML(certificateData) {
         font-family: "Times New Roman", serif;
         background: white;
         width: 210mm;
-        height: 297mm;
+        height: 280mm;
         margin: 0;
         padding: 0;
         overflow: hidden;
@@ -65,7 +65,7 @@ function generateCertificateHTML(certificateData) {
         width: 100%;
         height: 100vh;
         background: #731f15;
-        padding: 15px;
+        padding: 18px 0px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -164,11 +164,11 @@ function generateCertificateHTML(certificateData) {
       }
 
       .content-section {
-        flex: 1;
+       
         display: flex;
         flex-direction: column;
         justify-content: center;
-        margin: 20px 0;
+       margin-bottom: 00px;
       }
 
       .participation-details {
@@ -185,42 +185,32 @@ function generateCertificateHTML(certificateData) {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 100px;
         padding: 0 20px;
         flex-shrink: 0;
-      }
+        
 
-      .award-badge {
-        height: 80px;
-        width: auto;
-        object-fit: contain;
-      }
-
-      .signature-image {
-        height: 60px;
-        width: auto;
-        object-fit: contain;
       }
 
       .sponsors-section {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 15px;
+        margin-bottom: 100px;
         padding: 0 10px;
         flex-shrink: 0;
       }
 
       .sponsor-logo {
-        height: 50px;
+        height: 70px;
         width: auto;
         object-fit: contain;
       }
 
       .footer-section {
         display: flex;
-        justify-content: flex-end;
-        align-items: flex-end;
+        justify-content: flex-start;
+        align-items: flex-start;
         flex-shrink: 0;
       }
 
@@ -232,36 +222,37 @@ function generateCertificateHTML(certificateData) {
       }
 
       .contact-info {
-        font-size: 12px;
+        font-size: 16px;
         color: #333;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         text-align: left;
         line-height: 1.3;
-        font-weight: 500;
+        font-weight:600;
       }
 
       .contact-info svg {
-        background-color: #731f15;
-        padding: 3px;
+        background-color: rgb(255, 50, 50);
+        padding: 8px;
         border-radius: 2px;
       }
 
       .contact-info p {
-        margin-top: 8px;
-        font-weight: 500;
+        margin-top: 15px;
+        font-weight: 600;
+        font-size: 18px;
       }
 
       @media print {
         body {
           width: 210mm;
-          height: 297mm;
+          height: 280mm;
           margin: 0;
           padding: 0;
         }
 
         .certificate-container {
           width: 210mm;
-          height: 297mm;
+          height: 280mm;
           padding: 15px;
         }
 
@@ -294,21 +285,20 @@ function generateCertificateHTML(certificateData) {
 
             <div class="certificate-title">CERTIFICATE</div>
             <div class="participation-text">OF PARTICIPATION</div>
-            <div class="event-details">(${certificateData.competitionName.toUpperCase()})</div>
+            <div class="event-details">(WSRO REGIONAL COMPETITION)</div>
             <div class="awarded-text">This certificate is awarded to</div>
 
             <div class="participant-name">${certificateData.participantName}</div>
-            ${certificateData.teamName ? `<div class="team-name">Team: ${certificateData.teamName}</div>` : ''}
+  
           </div>
 
           <!-- Main Content -->
           <div class="content-section">
             <div class="participation-details">
               In recognition of active participation in the <br />
-              <strong>${certificateData.competitionName}</strong>, conducted on
+              <strong>WSRO Regional Competition</strong>, conducted on
               ${competitionDate} <br />at
               <strong>${certificateData.venue}</strong>
-              ${certificateData.position ? `<br /><br />Position: <strong>${certificateData.position}</strong>` : ''}
             </div>
           </div>
 
@@ -359,7 +349,7 @@ function generateCertificateHTML(certificateData) {
               <div class="contact-info">
                 <!-- Phone -->
                 <p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
                     <path d="M6.62 10.79a15.464 15.464 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.21c1.2.48 2.53.74 3.88.74a1 1 0 011 1v3.49a1 1 0 01-1 1C9.94 22 2 14.06 2 4.5a1 1 0 011-1h3.49a1 1 0 011 1c0 1.35.25 2.68.74 3.88a1 1 0 01-.21 1.11l-2.2 2.2z"/>
                   </svg>
                   +91 99044 63224, +91 81287 28882
@@ -367,7 +357,7 @@ function generateCertificateHTML(certificateData) {
             
                 <!-- Email -->
                 <p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
                     <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                   </svg>
                   www.wsro.in, info@wsro.in
@@ -375,7 +365,7 @@ function generateCertificateHTML(certificateData) {
             
                 <!-- Location -->
                 <p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/>
                   </svg>
                   Happiness Reserves Foundation, Ahmedabad, India - 380058
