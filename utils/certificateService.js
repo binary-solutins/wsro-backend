@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 
 // Configure email transporter
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
   secure: false,
