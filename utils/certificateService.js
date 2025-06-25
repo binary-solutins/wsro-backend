@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 
 // Configure email transporter
-const transporter = nodemailer.createTransport({
+const transporter = nodemailer.createTransporter({
   host: 'smtp.gmail.com',
   port: 587,
   secure: false,
@@ -54,7 +54,7 @@ function generateCertificateHTML(certificateData) {
         font-family: "Times New Roman", serif;
         background: white;
         width: 210mm;
-        height: 280mm;
+        height: 297mm;
         margin: 0;
         padding: 0;
         overflow: hidden;
@@ -64,200 +64,125 @@ function generateCertificateHTML(certificateData) {
       .certificate-container {
         width: 100%;
         height: 100vh;
-        background: #731f15;
-        padding: 18px 0px;
+        position: relative;
         display: flex;
         justify-content: center;
         align-items: center;
         box-sizing: border-box;
       }
 
-      .certificate-border {
+      .certificate-background {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
-        border: 4px solid white;
-        background: rgb(251, 250, 250);
-        position: relative;
-        display: flex;
-        flex-direction: column;
+        background-image: url('https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/685c0aee003e37dfc5fa/view?project=67aee32f0028febbce2c&mode=admin');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        z-index: 1;
       }
 
-      .certificate-inner {
+      .certificate-content {
+        position: relative;
+        z-index: 2;
         width: 100%;
         height: 100%;
-        padding: 30px;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        position: relative;
-        box-sizing: border-box;
-      }
-
-      .header {
+        justify-content: center;
+        align-items: center;
         text-align: center;
-        flex-shrink: 0;
-      }
-
-      .wsro-logo-container {
-        margin-bottom: 20px;
-      }
-
-      .logo-right {
-        display: flex;
-        justify-content: flex-end;
-      }
-      
-      .wsro-logo {
-        width: 45%;
-        max-width: 300px;
-        height: auto;
-        object-fit: contain;
+        padding: 50px;
+        box-sizing: border-box;
       }
 
       .certificate-title {
-        font-size: 36px;
-        font-weight: 500;
-        color: #3e3c3c;
-        margin-bottom: 10px;
-        letter-spacing: 4px;
+        font-size: 48px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 15px;
+        letter-spacing: 6px;
+        font-family: "Times New Roman", serif;
+        text-transform: uppercase;
       }
 
       .participation-text {
-        font-size: 18px;
-        color: #414141;
-        margin-bottom: 15px;
-        letter-spacing: 3px;
+        font-size: 24px;
+        color: #555;
+        margin-bottom: 20px;
+        letter-spacing: 4px;
+        font-weight: 500;
+        text-transform: uppercase;
       }
 
       .event-details {
-        font-size: 18px;
-        color: #333;
-        margin-bottom: 15px;
+        font-size: 20px;
+        color: #666;
+        margin-bottom: 25px;
         letter-spacing: 2px;
         font-weight: 500;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        text-transform: uppercase;
       }
 
       .awarded-text {
-        font-size: 14px;
-        color: #666;
-        margin-bottom: 15px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-size: 18px;
+        color: #777;
+        margin-bottom: 30px;
+        font-style: italic;
       }
 
       .participant-name {
-        font-size: 28px;
+        font-size: 36px;
         font-weight: bold;
         color: #333;
-        padding-bottom: 8px;
-        border-bottom: 2px dashed #731f15;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        margin-bottom: 5px;
-      }
-
-      .team-name {
-        font-size: 16px;
-        font-weight: 600;
-        color: #731f15;
-        margin-top: 5px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      }
-
-      .content-section {
-       
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-       margin-bottom: 00px;
+        padding: 15px 0;
+        border-bottom: 3px solid #731f15;
+        margin-bottom: 30px;
+        min-width: 400px;
+        font-family: "Times New Roman", serif;
       }
 
       .participation-details {
-        text-align: center;
-        font-weight: 500;
-        font-size: 14px;
-        color: #333;
-        letter-spacing: 0.8px;
-        line-height: 1.6;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      }
-
-      .signature-badge-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 100px;
-        padding: 0 20px;
-        flex-shrink: 0;
-        
-
-      }
-
-      .sponsors-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 100px;
-        padding: 0 10px;
-        flex-shrink: 0;
-      }
-
-      .sponsor-logo {
-        height: 70px;
-        width: auto;
-        object-fit: contain;
-      }
-
-      .footer-section {
-        display: flex;
-        justify-content: flex-start;
-        align-items: flex-start;
-        flex-shrink: 0;
-      }
-
-      .footer-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 3px;
-      }
-
-      .contact-info {
         font-size: 16px;
-        color: #333;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        text-align: left;
-        line-height: 1.3;
-        font-weight:600;
+        color: #555;
+        line-height: 1.8;
+        max-width: 600px;
+        margin: 0 auto 30px;
+        font-weight: 500;
       }
 
-      .contact-info svg {
-        background-color: rgb(255, 50, 50);
-        padding: 8px;
-        border-radius: 2px;
+      .competition-date {
+        font-weight: bold;
+        color: #731f15;
       }
 
-      .contact-info p {
-        margin-top: 15px;
-        font-weight: 600;
-        font-size: 18px;
+      .venue {
+        font-weight: bold;
+        color: #731f15;
+      }
+
+      .certificate-id {
+        position: absolute;
+        bottom: 20px;
+        right: 30px;
+        font-size: 12px;
+        color: #888;
+        font-family: monospace;
       }
 
       @media print {
         body {
           width: 210mm;
-          height: 280mm;
+          height: 297mm;
           margin: 0;
           padding: 0;
         }
 
         .certificate-container {
           width: 210mm;
-          height: 280mm;
-          padding: 15px;
-        }
-
-        .certificate-inner {
-          padding: 30px;
+          height: 297mm;
         }
 
         * {
@@ -265,115 +190,58 @@ function generateCertificateHTML(certificateData) {
           color-adjust: exact !important;
         }
       }
+
+      /* Responsive adjustments for different screen sizes */
+      @media screen and (max-width: 768px) {
+        .certificate-title {
+          font-size: 36px;
+          letter-spacing: 4px;
+        }
+        
+        .participant-name {
+          font-size: 28px;
+          min-width: 300px;
+        }
+        
+        .participation-text {
+          font-size: 20px;
+          letter-spacing: 3px;
+        }
+        
+        .event-details {
+          font-size: 18px;
+        }
+        
+        .participation-details {
+          font-size: 14px;
+          max-width: 500px;
+        }
+      }
     </style>
   </head>
   <body>
     <div class="certificate-container">
-      <div class="certificate-border">
-        <div class="certificate-inner">
-          <!-- Header with WSRO Logo -->
-          <div class="header">
-            <div class="wsro-logo-container">
-              <div class="logo-right">
-                <img
-                  src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a29000921fb3e0f/view?project=67aee32f0028febbce2c&"
-                  alt="WSRO Logo"
-                  class="wsro-logo"
-                />
-              </div>
-            </div>
-
-            <div class="certificate-title">CERTIFICATE</div>
-            <div class="participation-text">OF PARTICIPATION</div>
-            <div class="event-details">(WSRO REGIONAL COMPETITION)</div>
-            <div class="awarded-text">This certificate is awarded to</div>
-
-            <div class="participant-name">${certificateData.participantName}</div>
-  
-          </div>
-
-          <!-- Main Content -->
-          <div class="content-section">
-            <div class="participation-details">
-              In recognition of active participation in the <br />
-              <strong>WSRO Regional Competition</strong>, conducted on
-              ${competitionDate} <br />at
-              <strong>${certificateData.venue}</strong>
-            </div>
-          </div>
-
-          <!-- Signature and Badge Section -->
-          <div class="signature-badge-section">
-            <img
-              src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a00000b2df78936/view?project=67aee32f0028febbce2c&"
-              alt="WSRO Award Badge"
-              class="award-badge"
-            />
-
-            <div class="signature-section">
-              <img
-                src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/684f2a30002b5fd714e2/view?project=67aee32f0028febbce2c&"
-                alt="Signature"
-                class="signature-image"
-              />
-            </div>
-          </div>
-
-          <!-- Sponsors Section -->
-          <div class="sponsors-section">
-            <img
-              src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/685a8dee002201cf14be/view?project=67aee32f0028febbce2c&"
-              alt="Chiripal"
-              class="sponsor-logo"
-            />
-            <img
-              src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/68516ae5002d14f601e7/view?project=67aee32f0028febbce2c&"
-              alt="Happiness"
-              class="sponsor-logo"
-            />
-            <img
-              src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/685a8ddc001de00152a8/view?project=67aee32f0028febbce2c&"
-              alt="Science City"
-              class="sponsor-logo"
-            />
-            <img
-              src="http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/685a8de500184129eb9c/view?project=67aee32f0028febbce2c&"
-              alt="DST"
-              class="sponsor-logo"
-            />
-          </div>
-          
-          <!-- Footer -->
-          <div class="footer-section">
-            <div class="footer-right">
-              <div class="contact-info">
-                <!-- Phone -->
-                <p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
-                    <path d="M6.62 10.79a15.464 15.464 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.21c1.2.48 2.53.74 3.88.74a1 1 0 011 1v3.49a1 1 0 01-1 1C9.94 22 2 14.06 2 4.5a1 1 0 011-1h3.49a1 1 0 011 1c0 1.35.25 2.68.74 3.88a1 1 0 01-.21 1.11l-2.2 2.2z"/>
-                  </svg>
-                  +91 99044 63224, +91 81287 28882
-                </p>
-            
-                <!-- Email -->
-                <p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
-                    <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                  </svg>
-                  www.wsro.in, info@wsro.in
-                </p>
-            
-                <!-- Location -->
-                <p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="white" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/>
-                  </svg>
-                  Happiness Reserves Foundation, Ahmedabad, India - 380058
-                </p>
-              </div>
-            </div>
-          </div>
+      <!-- Background Image -->
+      <div class="certificate-background"></div>
+      
+      <!-- Certificate Content Overlay -->
+      <div class="certificate-content">
+        <div class="certificate-title">CERTIFICATE</div>
+        <div class="participation-text">OF PARTICIPATION</div>
+        <div class="event-details">(WSRO REGIONAL COMPETITION)</div>
+        <div class="awarded-text">This certificate is awarded to</div>
+        
+        <div class="participant-name">${certificateData.participantName}</div>
+        
+        <div class="participation-details">
+          In recognition of active participation in the<br />
+          <strong>WSRO Regional Competition</strong>, conducted on
+          <span class="competition-date">${competitionDate}</span><br />
+          at <span class="venue">${certificateData.venue}</span>
         </div>
+        
+        <!-- Certificate ID -->
+        <div class="certificate-id">Certificate ID: ${certificateData.certificateId}</div>
       </div>
     </div>
   </body>
@@ -388,7 +256,7 @@ async function generateCertificate(certificateData) {
   // Generate HTML content
   const htmlContent = generateCertificateHTML(certificateData);
 
-  // Configure PDF options - optimized for single page
+  // Configure PDF options - optimized for A4
   const options = {
     format: 'A4',
     orientation: 'portrait',
@@ -402,20 +270,27 @@ async function generateCertificate(certificateData) {
     preferCSSPageSize: true,
     displayHeaderFooter: false,
     height: '297mm',
-    width: '210mm'
+    width: '210mm',
+    quality: 100
   };
 
   // Create file object for html-pdf-node
   const file = { content: htmlContent };
 
-  // Generate PDF
-  const pdfBuffer = await htmlToPdf.generatePdf(file, options);
+  try {
+    // Generate PDF
+    const pdfBuffer = await htmlToPdf.generatePdf(file, options);
 
-  // Create certificate PDF
-  const certificatePath = path.join(uploadsDir, `certificate-${certificateData.certificateId}.pdf`);
-  await fs.writeFile(certificatePath, pdfBuffer);
+    // Create certificate PDF
+    const certificatePath = path.join(uploadsDir, `certificate-${certificateData.certificateId}.pdf`);
+    await fs.writeFile(certificatePath, pdfBuffer);
 
-  return certificatePath;
+    console.log(`Certificate generated successfully: ${certificatePath}`);
+    return certificatePath;
+  } catch (error) {
+    console.error('Error generating certificate:', error);
+    throw error;
+  }
 }
 
 async function sendCertificateEmail(emailData) {
@@ -426,33 +301,120 @@ async function sendCertificateEmail(emailData) {
     to: email,
     subject: `Your Certificate - ${competitionName}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #731f15;">Congratulations ${name}!</h2>
-        <p>Thank you for participating in <strong>${competitionName}</strong>.</p>
-        <p>Please find your certificate of participation attached to this email.</p>
-        <p>Certificate ID: <strong>${certificateId}</strong></p>
-        <br>
-        <p>Best regards,<br>WSRO Team</p>
-        <hr>
-        <p style="font-size: 12px; color: #666;">
-          Contact: +91 99044 63224, +91 81287 28882<br>
-          Email: info@wsro.in | Website: www.wsro.in
-        </p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="color: #731f15; margin-bottom: 10px;">🎉 Congratulations ${name}! 🎉</h2>
+          <div style="width: 50px; height: 3px; background: #731f15; margin: 0 auto;"></div>
+        </div>
+        
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+            Thank you for your outstanding participation in <strong style="color: #731f15;">${competitionName}</strong>.
+          </p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+            Your dedication and enthusiasm made this competition a great success!
+          </p>
+          <p style="font-size: 16px; line-height: 1.6;">
+            Please find your <strong>Certificate of Participation</strong> attached to this email.
+          </p>
+        </div>
+        
+        <div style="background: #731f15; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+          <p style="margin: 0; font-size: 14px; font-family: monospace;">
+            <strong>Certificate ID: ${certificateId}</strong>
+          </p>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+          <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
+            Keep this certificate as a token of your achievement!
+          </p>
+        </div>
+        
+        <div style="border-top: 1px solid #ddd; padding-top: 20px;">
+          <p style="font-size: 16px; color: #333; margin-bottom: 15px;">
+            <strong>Best regards,</strong><br>
+            <span style="color: #731f15;">WSRO Team</span>
+          </p>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px;">
+          <p style="font-size: 12px; color: #666; margin-bottom: 8px;">
+            📞 <strong>Contact:</strong> +91 99044 63224, +91 81287 28882
+          </p>
+          <p style="font-size: 12px; color: #666; margin-bottom: 8px;">
+            📧 <strong>Email:</strong> info@wsro.in | 🌐 <strong>Website:</strong> www.wsro.in
+          </p>
+          <p style="font-size: 12px; color: #666; margin: 0;">
+            📍 <strong>Address:</strong> Happiness Reserves Foundation, Ahmedabad, India - 380058
+          </p>
+        </div>
       </div>
     `,
     attachments: [
       {
-        filename: `${name.replace(/[^a-zA-Z0-9]/g, '_')}-Certificate.pdf`,
-        path: certificatePath
+        filename: `${name.replace(/[^a-zA-Z0-9]/g, '_')}-Certificate-${certificateId}.pdf`,
+        path: certificatePath,
+        contentType: 'application/pdf'
       }
     ]
   };
 
-  const info = await transporter.sendMail(mailOptions);
-  return info;
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Certificate email sent successfully:', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending certificate email:', error);
+    throw error;
+  }
+}
+
+// Example usage function
+async function createAndSendCertificate(participantData) {
+  try {
+    // Sample certificate data
+    const certificateData = {
+      participantName: participantData.name,
+      competitionDate: participantData.competitionDate || new Date(),
+      venue: participantData.venue || 'Saraswat Vidyalaya Mapusa, Goa',
+      certificateId: participantData.certificateId || `WSRO-${Date.now()}`
+    };
+
+    // Generate certificate
+    const certificatePath = await generateCertificate(certificateData);
+
+    // Send email if email is provided
+    if (participantData.email) {
+      const emailData = {
+        email: participantData.email,
+        name: participantData.name,
+        competitionName: 'WSRO Regional Competition',
+        certificatePath: certificatePath,
+        certificateId: certificateData.certificateId
+      };
+
+      await sendCertificateEmail(emailData);
+    }
+
+    return {
+      success: true,
+      certificatePath: certificatePath,
+      certificateId: certificateData.certificateId
+    };
+  } catch (error) {
+    console.error('Error in certificate generation process:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 }
 
 module.exports = {
   generateCertificate,
-  sendCertificateEmail
+  sendCertificateEmail,
+  createAndSendCertificate
 };
