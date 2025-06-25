@@ -100,7 +100,7 @@ function generateCertificateHTML(certificateData) {
       }
 
       .certificate-title {
-        font-size: 48px;
+        font-size: 52px;
         font-weight: bold;
         color: #333;
         margin-bottom: 15px;
@@ -119,7 +119,7 @@ function generateCertificateHTML(certificateData) {
       }
 
       .event-details {
-        font-size: 20px;
+        font-size: 24px;
         color: #666;
         margin-bottom: 25px;
         letter-spacing: 2px;
@@ -146,7 +146,7 @@ function generateCertificateHTML(certificateData) {
       }
 
       .participation-details {
-        font-size: 16px;
+        font-size: 20px;
         color: #555;
         line-height: 1.8;
         max-width: 600px;
