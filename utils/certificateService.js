@@ -94,7 +94,8 @@ function generateCertificateHTML(certificateData) {
         justify-content: center;
         align-items: center;
         text-align: center;
-        padding: 50px;
+        padding-bottom: 270px;
+        
         box-sizing: border-box;
       }
 
@@ -138,7 +139,7 @@ function generateCertificateHTML(certificateData) {
         font-weight: bold;
         color: #333;
         padding: 15px 0;
-        border-bottom: 3px solid #731f15;
+        border-bottom: 3px dashed #731f15;
         margin-bottom: 30px;
         min-width: 400px;
         font-family: "Times New Roman", serif;
