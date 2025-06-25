@@ -77,7 +77,7 @@ function generateCertificateHTML(certificateData) {
         left: 0;
         width: 100%;
         height: 100%;
-        background-image: url('https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/685c0aee003e37dfc5fa/view?project=67aee32f0028febbce2c&mode=admin');
+        background-image: url('https://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/685c124a00047f12d79c/view?project=67aee32f0028febbce2c&');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -94,7 +94,7 @@ function generateCertificateHTML(certificateData) {
         justify-content: center;
         align-items: center;
         text-align: center;
-        padding-bottom: 270px;
+        padding-bottom: 160px;
         
         box-sizing: border-box;
       }
@@ -167,10 +167,11 @@ function generateCertificateHTML(certificateData) {
       .certificate-id {
         position: absolute;
         bottom: 20px;
-        right: 30px;
-        font-size: 12px;
-        color: #888;
+        left: 30px;
+        font-size: 14px;
+        color: #731f15;
         font-family: monospace;
+        font-weight: 600;
       }
 
       @media print {
@@ -242,7 +243,7 @@ function generateCertificateHTML(certificateData) {
         </div>
         
         <!-- Certificate ID -->
-        <div class="certificate-id">Certificate ID: ${certificateData.certificateId}</div>
+        <div class="certificate-id">Certificate ID: WSROIN/25/PA/0001</div>
       </div>
     </div>
   </body>
