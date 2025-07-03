@@ -2,6 +2,7 @@ const htmlToPdf = require('html-pdf-node');
 const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs').promises;
+const db = require("../src/config/database");
 
 // Configure email transporter
 const transporter = nodemailer.createTransport({
