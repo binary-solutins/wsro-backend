@@ -350,7 +350,7 @@ async function sendCertificateEmail(emailData) {
           
           <!-- Header with WSRO Branding -->
           <div style="background: linear-gradient(135deg, #731f15, #a02c20); padding: 30px 20px; text-align: center; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><polygon points="0,0 50,0 0,50" fill="rgba(255,255,255,0.05)"/><polygon points="50,0 100,0 100,50" fill="rgba(255,255,255,0.03)"/><polygon points="0,50 50,100 0,100" fill="rgba(255,255,255,0.03)"/><polygon points="50,100 100,50 100,100" fill="rgba(255,255,255,0.05)"/></svg>') repeat; opacity: 0.3;"></div>
+          
             
             <div style="position: relative; z-index: 2;">
               <div style="background: white; display: inline-block; padding: 15px 30px; border-radius: 50px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
