@@ -3,8 +3,10 @@ const router = express.Router();
 const { body } = require('express-validator');
 const { auth } = require('../middleware/auth');
 const competitionController = require('../controller/competitionController');
+const certificateService = require('../utils/certificateService');
 const upload = require('../config/s3');
 const multer = require('multer');
+const { sendBulkCertificatesByTeamId } = require('../../utils/certificateService');
 const uploads = multer({ storage: multer.memoryStorage() });
 
 router.get('/', competitionController.getCompetitions);
@@ -43,7 +45,7 @@ router.post('/send-certificates', [
   auth,
 ], competitionController.sendBulkCertificates);
 
-router.post('/sent-team-certificates', auth, competitionController.sendTeamCertificates);
+router.post('/sent-team-certificates', auth, sendBulkCertificatesByTeamId);
 
 router.post('/resend-email', competitionController.resendEventPassEmail);
 

@@ -11,15 +11,15 @@ const upload = require("../config/s3");
 const path = require('path');
 const { sendRegistrationEmail, sendParticipantEmail, sendTeamSummaryEmail } = require("../../utils/emailService");
 const fs = require("fs").promises;
-const axios = require('axios'); // Add axios for HTTP requests
-const FormData = require('form-data'); // Add form-data for multipart uploads
+const axios = require('axios'); 
+const FormData = require('form-data'); 
 const htmlToPdf = require('html-pdf-node');
 const { v4: uuidv4 } = require('uuid');
 const archiver = require('archiver');
 const stream = require('stream');
 // Appwrite configuration
-const APPWRITE_ENDPOINT = 'https://cloud.appwrite.io/v1'; // Replace with your Appwrite endpoint
-const APPWRITE_PROJECT_ID = '67aee32f0028febbce2c'; // Replace with your project ID
+const APPWRITE_ENDPOINT = 'https://cloud.appwrite.io/v1'; 
+const APPWRITE_PROJECT_ID = '67aee32f0028febbce2c';
 const APPWRITE_BUCKET_ID = '67aee35f000b324ca10c';
 
 async function uploadCertificateToAppwrite(pdfBuffer, fileName, certificateId) {
