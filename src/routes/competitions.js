@@ -7,6 +7,7 @@ const certificateService = require('../../utils/certificateService');
 const upload = require('../config/s3');
 const multer = require('multer');
 const { sendBulkCertificatesByTeamId } = require('../../utils/certificateService');
+const { sendApologyEmailsToAllCertificateHoldersGlobal } = require('../../utils/applogoly');
 const uploads = multer({ storage: multer.memoryStorage() });
 
 router.get('/', competitionController.getCompetitions);
@@ -50,7 +51,7 @@ router.post('/sent-team-certificates', auth, sendBulkCertificatesByTeamId);
 router.post('/resend-email', competitionController.resendEventPassEmail);
 
 // Add multer for file upload
-
+router.post('/send-apology', sendApologyEmailsToAllCertificateHoldersGlobal );
 
 router.post('/bulk-register', uploads.single('excel'), competitionController.bulkRegisterForCompetition);
 
