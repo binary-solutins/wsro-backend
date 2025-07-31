@@ -108,7 +108,7 @@ function generateCertificateHTML(certificateData) {
         left: 0;
         width: 100%;
         height: 100%;
-        background-image: url('http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/685c0aee003e37dfc5fa/view?project=67aee32f0028febbce2c');
+        background-image: url('http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/685c124a00047f12d79c/view?project=67aee32f0028febbce2c');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
