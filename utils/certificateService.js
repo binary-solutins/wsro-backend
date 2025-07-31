@@ -108,7 +108,7 @@ function generateCertificateHTML(certificateData) {
         left: 0;
         width: 100%;
         height: 100%;
-        background-image: url('https://binary01.blob.core.windows.net/documents/WSRO%20Certificates%202025%20%20(3)%20(1).jpg');
+        background-image: url('http://fra.cloud.appwrite.io/v1/storage/buckets/67aee35f000b324ca10c/files/685c0aee003e37dfc5fa/view?project=67aee32f0028febbce2c');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
