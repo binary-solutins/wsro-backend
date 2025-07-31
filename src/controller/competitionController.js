@@ -2038,7 +2038,7 @@ Or use ID ranges:
       const placeholders = competitionIds.map(() => '?').join(',');
       
       const [registrations] = await db.query(
-        `SELECT r.*, c.name as competition_name 
+        `SELECT r.*, c.name as competition_name, c.venue, c.date, c.level
          FROM Registrations r
          JOIN Competitions c ON r.competition_id = c.id
          WHERE r.competition_id IN (${placeholders})
@@ -2124,7 +2124,7 @@ Or use ID ranges:
               participantName: memberName,
               teamName: registration.team_name,
               competitionName: registration.competition_name,
-              competitionDate: registration.created_at,
+              competitionDate: registration.date || registration.created_at,
               venue: registration.venue || 'TBD',
               level: registration.level || 'Competition',
               position: i === 0 ? 'Team Leader' : 'Team Member'
