@@ -334,9 +334,9 @@ function generateCertificateHTML(registration) {
                     <!-- Main Content -->
                     <div class="content-section">
                         <div class="participation-details">
-                            for winning the <strong> ${registration.grade_or_winning_rank}</strong> position in the <br> WSRO IRAN National Competition 2025 on the date
-                            of <strong>21,22 & 23 May 2025</strong>
-                            <br>At <strong>${registration.school_institute}.</strong>
+                            ${registration.grade_or_winning_rank && registration.grade_or_winning_rank.trim() !== '' 
+                                ? `for winning the <strong>${registration.grade_or_winning_rank}</strong> position in the<br>WSRO IRAN National Competition 2025`
+                                : `has successfully completed the course titled<br><strong>"${registration.course_name_competition_category || 'Intermediate Level Programming'}"</strong><br>offered by WSRO Iran during the year 2025.`}
                         </div>
                     </div>
                     
