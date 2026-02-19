@@ -8,7 +8,7 @@ const transporter = nodemailer.createTransport({
   secure: false,
   auth: {
     user: 'binarysolutions0000@gmail.com',
-    pass: 'bekr rmpn lyye tuyf'
+    pass: 'vjfl zawy sxop xlqm'
   },
   tls: {
     rejectUnauthorized: false
@@ -181,8 +181,8 @@ const sendApologyEmailsToAllCertificateHolders = async (req, res) => {
 
     // Validate required fields
     if (!competition_ids || !Array.isArray(competition_ids) || competition_ids.length === 0) {
-      return res.status(400).json({ 
-        message: "competition_ids should be a non-empty array" 
+      return res.status(400).json({
+        message: "competition_ids should be a non-empty array"
       });
     }
 
@@ -211,11 +211,11 @@ const sendApologyEmailsToAllCertificateHolders = async (req, res) => {
 
         // Send apology email to each certificate holder
         for (const certificate of certificates) {
-          const { 
-            participant_name, 
-            participant_email, 
-            certificate_id, 
-            competition_name 
+          const {
+            participant_name,
+            participant_email,
+            certificate_id,
+            competition_name
           } = certificate;
 
           try {
@@ -279,8 +279,8 @@ const sendApologyEmailsByTeamIds = async (req, res) => {
 
     // Validate required fields
     if (!team_ids || !Array.isArray(team_ids) || team_ids.length === 0) {
-      return res.status(400).json({ 
-        message: "team_ids should be a non-empty array" 
+      return res.status(400).json({
+        message: "team_ids should be a non-empty array"
       });
     }
 
@@ -309,11 +309,11 @@ const sendApologyEmailsByTeamIds = async (req, res) => {
 
         // Send apology email to each certificate holder in the team
         for (const certificate of certificates) {
-          const { 
-            participant_name, 
-            participant_email, 
-            certificate_id, 
-            competition_name 
+          const {
+            participant_name,
+            participant_email,
+            certificate_id,
+            competition_name
           } = certificate;
 
           try {
@@ -395,10 +395,10 @@ const sendApologyEmailsToAllCertificateHoldersGlobal = async (req, res) => {
 
     // Send apology email to each certificate holder
     for (const certificate of certificates) {
-      const { 
-        participant_name, 
-        participant_email, 
-        certificate_id, 
+      const {
+        participant_name,
+        participant_email,
+        certificate_id,
         competition_name,
         competition_id,
         team_id

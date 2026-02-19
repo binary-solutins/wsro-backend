@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
   secure: false,
   auth: {
     user: 'binarysolutions0000@gmail.com',
-    pass: 'bekr rmpn lyye tuyf'
+    pass: 'vjfl zawy sxop xlqm'
   },
   tls: {
     rejectUnauthorized: false
@@ -29,7 +29,7 @@ async function generateSequentialCertificateId(db) {
     );
 
     let nextSequence = 1;
-    
+
     if (lastCertResult && lastCertResult.length > 0) {
       const lastId = lastCertResult[0].certificate_id;
       const sequenceMatch = lastId.match(/WSROIN\/25\/PA\/(\d+)$/);
@@ -504,8 +504,8 @@ const sendBulkCertificatesByTeamId = async (req, res) => {
 
     // Validate required fields
     if (!team_ids || !Array.isArray(team_ids) || team_ids.length === 0) {
-      return res.status(400).json({ 
-        message: "team_ids should be a non-empty array" 
+      return res.status(400).json({
+        message: "team_ids should be a non-empty array"
       });
     }
 
@@ -547,20 +547,20 @@ const sendBulkCertificatesByTeamId = async (req, res) => {
         }
 
         const team = teamResult[0];
-        const { 
-          team_name, 
-          member_emails, 
+        const {
+          team_name,
+          member_emails,
           member_names,
           competition_id,
-          competition_name, 
-          date, 
-          venue, 
-          level 
+          competition_name,
+          date,
+          venue,
+          level
         } = team;
 
         let memberEmails = [];
         let memberNames = [];
-        
+
         try {
           memberEmails = JSON.parse(member_emails) || [];
           memberNames = JSON.parse(member_names) || [];
@@ -576,7 +576,7 @@ const sendBulkCertificatesByTeamId = async (req, res) => {
         for (let i = 0; i < memberEmails.length; i++) {
           const email = memberEmails[i];
           const participantName = memberNames[i] || `Team Member ${i + 1}`;
-          
+
           try {
             // Generate sequential certificate ID
             const certificateId = await generateSequentialCertificateId(db);

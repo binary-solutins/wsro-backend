@@ -19,18 +19,20 @@ class EventPassGenerator {
     });
 
     // Set paths for assets
+    // Note: 'assests' typo preserved from original code to maintain compatibility
     const logoPath = path.join(__dirname, 'assests', 'images', 'logo.jpg');
-    
+
     // Set paths for Poppins font files
     const poppinsRegularPath = path.join(__dirname, 'assests', 'fonts', 'Poppins-Regular.ttf');
     const poppinsBoldPath = path.join(__dirname, 'assests', 'fonts', 'Poppins-Bold.ttf');
     const poppinsMediumPath = path.join(__dirname, 'assests', 'fonts', 'Poppins-Medium.ttf');
 
-    // Document dimensions (ID card style)
-    const width = 242; // ~3.4 inches
-    const height = 383; // ~5.3 inches
-    
-    // Create a PDF with ID card dimensions
+    // Document dimensions (Standard ID card size: 2.125" x 3.375" approx)
+    // Using slightly larger layout from original code but refined
+    const width = 242;
+    const height = 383;
+
+    // Create a PDF
     const doc = new PDFDocument({
       size: [width, height],
       margin: 0,
@@ -38,111 +40,137 @@ class EventPassGenerator {
     });
 
     // Register fonts
-    doc.registerFont('PoppinsRegular', poppinsRegularPath);
-    doc.registerFont('PoppinsBold', poppinsBoldPath);
-    doc.registerFont('PoppinsMedium', poppinsMediumPath);
+    try {
+      doc.registerFont('PoppinsRegular', poppinsRegularPath);
+      doc.registerFont('PoppinsBold', poppinsBoldPath);
+      doc.registerFont('PoppinsMedium', poppinsMediumPath);
+    } catch (e) {
+      // Fallback if custom fonts fail
+      doc.font('Helvetica');
+      console.warn("Custom fonts not found, using Helvetica");
+    }
 
-    // Color scheme (orange accent like the example)
+    // Color scheme
     const colors = {
-      primary: '#F05A28', // Orange
+      primary: '#F05A28',   // Orange
+      secondary: '#1E88E5', // Blue (complementary)
+      text: '#222222',
+      textLight: '#666666',
       white: '#FFFFFF',
-      light: '#F8F8F8',
-      dark: '#333333',
-      gray: '#888888'
+      bgLight: '#FAFAFA',
+      border: '#E0E0E0'
     };
 
-    // Create white background
+    // --- Background ---
     doc.rect(0, 0, width, height).fill(colors.white);
 
-    // Left sidebar with role
-    doc.rect(0, 0, 60, height).fill(colors.primary);
-    
-    // "PARTICIPANT" text (vertical on left side)
-    doc.save();
-    doc.translate(30, height - 30);
-    doc.rotate(-90);
-    doc.font('PoppinsBold')
-      .fontSize(18)
-      .fillColor(colors.white)
-      .text("PARTICIPANT", 0, 0, {
-        align: 'center',
-        width: height - 60
-      });
-    doc.restore();
+    // Subtle gradient-like top header bar
+    doc.rect(0, 0, width, 55).fill(colors.white); // Clear background for logo area
 
-    // Event logo at top-right section
-    doc.image(logoPath, 90, 30, {
-      width: 120,
-      height: 60,
-      fit: [120, 60],
-      align: 'center'
-    });
-
-    // Competition name (single line)
-    doc.font('PoppinsBold')
-      .fontSize(16)
-      .fillColor(colors.primary)
-      .text(data.competition_name, 70, 100, {
-        width: 162,
+    // --- Logo ---
+    // Centered at top
+    try {
+      doc.image(logoPath, (width - 100) / 2, 10, {
+        width: 100,
+        height: 45,
+        fit: [100, 45],
         align: 'center'
       });
+    } catch (e) {
+      console.warn("Logo not found");
+    }
 
-    // Horizontal line separator
-    doc.strokeColor(colors.gray)
-      .lineWidth(1)
-      .moveTo(70, 130)
-      .lineTo(232, 130)
+    // --- Competition Name ---
+    const compNameY = 65;
+    doc.font('PoppinsBold')
+      .fontSize(13)
+      .fillColor(colors.primary)
+      .text(data.competition_name.toUpperCase(), 10, compNameY, {
+        width: width - 20,
+        align: 'center',
+        characterSpacing: 0.5
+      });
+
+    // --- Separator ---
+    doc.moveTo(40, compNameY + 35)
+      .lineTo(width - 40, compNameY + 35)
+      .lineWidth(0.5)
+      .strokeColor(colors.border)
       .stroke();
 
-    // Participant name (medium size)
-    doc.font('PoppinsMedium')
-      .fontSize(14)
-      .fillColor(colors.dark)
-      .text("Name:", 70, 150);
-      
-    doc.font('PoppinsRegular')
-      .fontSize(14)
-      .fillColor(colors.dark)
-      .text(data.name, 70, 170, {
-        width: 162
-      });
+    // --- Participant Section ---
+    let currentY = compNameY + 50;
 
-    // Participant ID (medium size)
-    doc.font('PoppinsMedium')
-      .fontSize(14)
-      .fillColor(colors.dark)
-      .text("ID:", 70, 200);
-      
-    doc.font('PoppinsRegular')
-      .fontSize(14)
-      .fillColor(colors.dark)
-      .text(data.participant_id, 70, 220, {
-        width: 162
-      });
+    // "PARTICIPANT" Tag
+    doc.rect((width - 100) / 2, currentY, 100, 18)
+      .fillAndStroke(colors.secondary, colors.secondary)
+      .fill();
 
-    // Access level
-    doc.roundedRect(70, 250, 162, 25, 5)
-      .fill(colors.primary);
-      
-    doc.font('PoppinsBold')
-      .fontSize(14)
+    doc.font('PoppinsMedium')
+      .fontSize(9)
       .fillColor(colors.white)
-      .text('EVENT ACCESS', 70, 255, {
-        width: 162,
+      .text("PARTICIPANT", 0, currentY + 4, {
+        width: width,
+        align: 'center',
+        characterSpacing: 1
+      });
+
+    currentY += 35;
+
+    // Name
+    doc.font('PoppinsBold')
+      .fontSize(16)
+      .fillColor(colors.text)
+      .text(data.name, 15, currentY, {
+        width: width - 30,
         align: 'center'
       });
 
-    // QR code at bottom
-    doc.image(qrCodeBuffer, 101, 290, {
-      width: 80,
-      height: 80
+    currentY += 25;
+
+    // ID
+    doc.font('PoppinsRegular')
+      .fontSize(10)
+      .fillColor(colors.textLight)
+      .text(`ID: ${data.participant_id}`, 15, currentY, {
+        width: width - 30,
+        align: 'center'
+      });
+
+    // --- Footer/Bottom Section ---
+
+    // QR Code Box
+    const qrSize = 90;
+    const qrY = height - 135;
+
+    // Draw container for QR
+    doc.roundedRect((width - qrSize) / 2 - 5, qrY - 5, qrSize + 10, qrSize + 10, 8)
+      .strokeColor(colors.border)
+      .lineWidth(0.5)
+      .stroke();
+
+    doc.image(qrCodeBuffer, (width - qrSize) / 2, qrY, {
+      width: qrSize,
+      height: qrSize
     });
 
-    // Small decoration hole at top
-    doc.circle(width / 2, 10, 7)
-      .fill('#EEEEEE');
-    doc.circle(width / 2, 10, 5)
-      .fill(colors.white);
+    // "Scan to Verify"
+    doc.font('PoppinsRegular')
+      .fontSize(8)
+      .fillColor(colors.textLight)
+      .text("Scan to Verify", 0, qrY + qrSize + 10, {
+        width: width,
+        align: 'center'
+      });
+
+    // Bottom Color Bar
+    doc.rect(0, height - 12, width, 12).fill(colors.primary);
+
+    // Punch Hole marker (optional, subtle)
+    doc.circle(width / 2, 12, 3)
+      .fillOpacity(0.2)
+      .fill(colors.textLight);
+    doc.fillOpacity(1); // Reset opacity
 
     // Create PDF buffer and save
     return new Promise((resolve, reject) => {
