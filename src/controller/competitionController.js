@@ -11,14 +11,14 @@ const upload = require("../config/s3");
 const path = require('path');
 const { sendRegistrationEmail, sendParticipantEmail, sendTeamSummaryEmail } = require("../../utils/emailService");
 const fs = require("fs").promises;
-const axios = require('axios'); 
-const FormData = require('form-data'); 
+const axios = require('axios');
+const FormData = require('form-data');
 const htmlToPdf = require('html-pdf-node');
 const { v4: uuidv4 } = require('uuid');
 const archiver = require('archiver');
 const stream = require('stream');
 // Appwrite configuration
-const APPWRITE_ENDPOINT = 'https://cloud.appwrite.io/v1'; 
+const APPWRITE_ENDPOINT = 'https://cloud.appwrite.io/v1';
 const APPWRITE_PROJECT_ID = '67aee32f0028febbce2c';
 const APPWRITE_BUCKET_ID = '67aee35f000b324ca10c';
 
@@ -334,9 +334,9 @@ function generateCertificateHTML(registration) {
                     <!-- Main Content -->
                     <div class="content-section">
                         <div class="participation-details">
-                            ${registration.grade_or_winning_rank && registration.grade_or_winning_rank.trim() !== '' 
-                                ? `for winning the <strong>${registration.grade_or_winning_rank}</strong> position in the<br>WSRO IRAN National Competition 2025 on the date<br>of <strong>21,22 & 23 May 2025</strong><br>At <strong>${registration.school_institute}.</strong>`
-                                : `has successfully completed the course titled<br><strong>"${registration.course_name_competition_category || 'Intermediate Level Programming'}"</strong><br>offered by WSRO Iran during the year 2025.`}
+                            ${registration.grade_or_winning_rank && registration.grade_or_winning_rank.trim() !== ''
+      ? `for winning the <strong>${registration.grade_or_winning_rank}</strong> position in the<br>WSRO IRAN National Competition 2025 on the date<br>of <strong>21,22 & 23 May 2025</strong><br>At <strong>${registration.school_institute}.</strong>`
+      : `has successfully completed the course titled<br><strong>"${registration.course_name_competition_category || 'Intermediate Level Programming'}"</strong><br>offered by WSRO Iran during the year 2025.`}
                         </div>
                     </div>
                     
@@ -661,7 +661,10 @@ module.exports = {
         (_, i) => `${team_code}-P${(i + 1).toString().padStart(2, "0")}`
       );
 
-      // ✅ Insert registration
+      // ✅ Determine status based on payment
+      const status = payment_id ? 'confirmed' : 'pending';
+      const payment_status = payment_id ? 'paid' : 'unpaid';
+
       await connection.query(
         `INSERT INTO Registrations (
         competition_id, event_id, team_code, team_name,
@@ -671,7 +674,7 @@ module.exports = {
         member_phones, member_states, member_cities,
         member_zipcodes, member_institutions,
         no_of_students, participant_id, status, payment_status, payment_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           competition_id,
           event_id,
@@ -691,6 +694,8 @@ module.exports = {
           JSON.stringify(member_institutions),
           no_of_students,
           JSON.stringify(participant_id),
+          status,
+          payment_status,
           payment_id
         ]
       );
@@ -1130,17 +1135,17 @@ module.exports = {
   sendBulkCertificates: async (req, res) => {
     try {
       const { team_codes } = req.body;
-  
+
       // Validate required fields
       if (!team_codes || !Array.isArray(team_codes) || team_codes.length === 0) {
-        return res.status(400).json({ 
-          message: "team_codes should be a non-empty array" 
+        return res.status(400).json({
+          message: "team_codes should be a non-empty array"
         });
       }
-  
+
       const results = [];
       const failed = [];
-  
+
       // Process each team code
       for (const team_code of team_codes) {
         try {
@@ -1153,7 +1158,7 @@ module.exports = {
              WHERE r.team_code = ? AND c.is_deleted = 0`,
             [team_code]
           );
-  
+
           if (!teamResult || teamResult.length === 0) {
             failed.push({
               team_code,
@@ -1161,18 +1166,18 @@ module.exports = {
             });
             continue;
           }
-  
+
           const team = teamResult[0];
-          const { 
-            team_name, 
-            member_emails, 
+          const {
+            team_name,
+            member_emails,
             competition_id,
-            competition_name, 
-            date, 
-            venue, 
-            level 
+            competition_name,
+            date,
+            venue,
+            level
           } = team;
-  
+
           let memberEmails = [];
           try {
             memberEmails = JSON.parse(member_emails) || [];
@@ -1183,9 +1188,9 @@ module.exports = {
             });
             continue;
           }
-  
-          const allEmails =  [...memberEmails];
-  
+
+          const allEmails = [...memberEmails];
+
           // Process each team member
           for (const email of allEmails) {
             try {
@@ -1194,11 +1199,11 @@ module.exports = {
                 .toString(36)
                 .substr(2, 6)
                 .toUpperCase()}`;
-  
+
               // Determine participant name and position
               const participantName = team_name;
-              const position =  "Team Member";
-  
+              const position = "Team Member";
+
               // Prepare certificate data
               const certificateData = {
                 certificateId,
@@ -1210,10 +1215,10 @@ module.exports = {
                 level: level,
                 position: position
               };
-  
+
               // Generate certificate PDF
               const certificatePath = await generateCertificate(certificateData);
-  
+
               // Send email with certificate
               await sendCertificateEmail({
                 email: email,
@@ -1222,7 +1227,7 @@ module.exports = {
                 certificatePath,
                 certificateId
               });
-  
+
               // Save certificate record to database
               await db.query(
                 `INSERT INTO Certificates (
@@ -1238,10 +1243,10 @@ module.exports = {
                   team_name
                 ]
               );
-  
+
               // Clean up temporary file
               await fs.unlink(certificatePath);
-  
+
               results.push({
                 email: email,
                 name: participantName,
@@ -1251,7 +1256,7 @@ module.exports = {
                 status: "success",
                 certificateId
               });
-  
+
             } catch (error) {
               console.error(`Error processing certificate for ${email}:`, error);
               failed.push({
@@ -1261,7 +1266,7 @@ module.exports = {
               });
             }
           }
-  
+
         } catch (error) {
           console.error(`Error processing team code ${team_code}:`, error);
           failed.push({
@@ -1270,7 +1275,7 @@ module.exports = {
           });
         }
       }
-  
+
       res.status(200).json({
         message: "Certificate generation and sending completed",
         successful: results.length,
@@ -1278,7 +1283,7 @@ module.exports = {
         results: results,
         failures: failed
       });
-  
+
     } catch (error) {
       console.error('Error in sendBulkCertificates:', error);
       res.status(500).json({
