@@ -12,7 +12,7 @@ const adminRoutes = require('./routes/admin');
 const competitionRoutes = require('./routes/competitions');
 const eventRoutes = require('./routes/events');
 const inquiryRoutes = require('./routes/inquiry');
-const razorpay = require('./Razorpay');
+const paymentRoutes = require('./routes/payment');
 
 const app = express();
 
@@ -68,7 +68,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/competitions', competitionRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/inquiries', inquiryRoutes);
-app.use('/razorpay',razorpay );
+app.use('/razorpay', paymentRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err.stack);
