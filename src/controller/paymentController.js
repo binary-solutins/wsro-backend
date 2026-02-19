@@ -4,6 +4,13 @@ const db = require('../config/database');
 
 exports.createOrder = async (req, res) => {
     try {
+        console.log("📝 [Razorpay] Create Order Request Body:", req.body);
+
+        if (!req.body.amount) {
+            console.error("❌ [Razorpay] Amount is missing in request body");
+            return res.status(400).json({ message: "Amount is required" });
+        }
+
         const options = {
             amount: req.body.amount * 100, // amount in the smallest currency unit
             currency: "INR",
@@ -11,14 +18,25 @@ exports.createOrder = async (req, res) => {
             payment_capture: 0
         };
 
+        console.log("⚙️ [Razorpay] Creating order with options:", JSON.stringify(options));
+
         const order = await razorpayInstance.orders.create(options);
+
+        console.log("✅ [Razorpay] Order created successfully:", order);
 
         if (!order) return res.status(500).send("Some error occured");
 
         res.status(200).json(order);
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Something went wrong", error: error.message });
+        console.error("❌ [Razorpay] Create Order Failed:");
+        console.error("Error Message:", error.message);
+        console.error("Full Error:", JSON.stringify(error, null, 2));
+
+        res.status(500).json({
+            message: "Something went wrong",
+            error: error.message,
+            details: error
+        });
     }
 };
 
