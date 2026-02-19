@@ -673,8 +673,8 @@ module.exports = {
         member_names, member_ages, member_emails,
         member_phones, member_states, member_cities,
         member_zipcodes, member_institutions,
-        no_of_students, participant_id, status, payment_status, payment_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        no_of_students, participant_id, status, payment_status, payment_id, region_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         [
           competition_id,
           event_id,
