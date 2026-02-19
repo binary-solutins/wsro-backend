@@ -41,61 +41,77 @@ exports.createOrder = async (req, res) => {
 };
 
 exports.verifyPayment = async (req, res) => {
-    const {
-        orderCreationId,
-        razorpayPaymentId,
-        razorpaySignature
-    } = req.body;
-
     try {
+        console.log("📝 [Razorpay] Verify Payment Request Body:", req.body);
+
+        const {
+            orderCreationId,
+            razorpayPaymentId,
+            razorpaySignature,
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature
+        } = req.body;
+
+        // Simplify: use whatever is available
+        const orderId = orderCreationId || razorpay_order_id;
+        const paymentId = razorpayPaymentId || razorpay_payment_id;
+        const signature = razorpaySignature || razorpay_signature;
+
+        if (!orderId || !paymentId || !signature) {
+            console.error("❌ [Razorpay] Missing required payment details");
+            return res.status(400).json({ message: "Missing required payment details" });
+        }
+
         const shasum = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
-        shasum.update(`${orderCreationId}|${razorpayPaymentId}`);
+        shasum.update(`${orderId}|${paymentId}`);
         const digest = shasum.digest("hex");
 
-        if (digest !== razorpaySignature)
+        console.log(`🔐 [Razorpay] verification: generated=${digest}, received=${signature}`);
+
+        if (digest !== signature) {
+            console.error("❌ [Razorpay] Signature mismatch! Transaction not legit.");
             return res.status(400).json({ message: "Transaction not legit!" });
+        }
+
+        console.log("✅ [Razorpay] Signature matched. Payment verified.");
 
         // Payment is legit, update the database
-        // We assume 'orderCreationId' corresponds to 'payment_id' in Registrations table.
-        // If the frontend sends 'razorpay_order_id' as 'orderCreationId', we are good.
+        // We assume 'orderId' corresponds to 'payment_id' in Registrations table.
+        // If the frontend sends 'razorpay_order_id' which matches the 'id' from createOrder response.
 
         // 1. Update Registration status
         const [updateResult] = await db.query(
             "UPDATE Registrations SET payment_status = 'paid', status = 'confirmed' WHERE payment_id = ?",
-            [orderCreationId]
+            [orderId]
         );
 
         if (updateResult.affectedRows === 0) {
-            console.warn(`Payment verified for order ${orderCreationId} but no registration found to update.`);
-            // Potentially we should still return success to the user if the payment itself was valid,
-            // but log this as an anomaly.
+            console.warn(`⚠️ [Razorpay] Payment verified for order ${orderId} but no registration found to update.`);
+            // Even if DB update fails to find a record, valid payment signatures should strictly be treated with care.
+            // But for the API response, we might still want to say success or warn.
         } else {
+            console.log(`✅ [Razorpay] Registration updated for payment_id: ${orderId}`);
+
             // 2. Insert into Payments table for record keeping
-            // First, get the registration ID
-            const [rows] = await db.query("SELECT id FROM Registrations WHERE payment_id = ?", [orderCreationId]);
+            const [rows] = await db.query("SELECT id FROM Registrations WHERE payment_id = ?", [orderId]);
             if (rows.length > 0) {
                 const registrationId = rows[0].id;
                 await db.query(
                     "INSERT INTO Payments (registration_id, amount, transaction_id, status) VALUES (?, ?, ?, ?)",
-                    [registrationId, 0, razorpayPaymentId, 'success']
-                    // Note: We don't have the amount here easily unless passed in body. 
-                    // For now inserting 0 or fetching from DB would be needed if crucial.
-                    // The schema says amount is DECIMAL(10,2) NOT NULL. 
-                    // Let's try to get it from the registration fees if possible or just put a placeholder if safe.
-                    // Actually, better to just log success. 
-                    // If strict schema on amount, we might fail. 
-                    // Let's verify schema constraints.
+                    [registrationId, 0, paymentId, 'success']
                 );
+                console.log(`✅ [Razorpay] Payment record inserted for registration ID: ${registrationId}`);
             }
         }
 
         res.status(200).json({
             message: "success",
-            orderId: orderCreationId,
-            paymentId: razorpayPaymentId,
+            orderId: orderId,
+            paymentId: paymentId,
         });
     } catch (error) {
-        console.error("Error in verifyPayment:", error);
+        console.error("❌ [Razorpay] Error in verifyPayment:", error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
