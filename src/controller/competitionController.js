@@ -665,7 +665,7 @@ module.exports = {
       const status = payment_id ? 'confirmed' : 'pending';
       const payment_status = payment_id ? 'paid' : 'unpaid';
 
-      await connection.query(
+      const [result] = await connection.query(
         `INSERT INTO Registrations (
         competition_id, event_id, team_code, team_name,
         coach_mentor_name, coach_mentor_organization,
@@ -699,6 +699,14 @@ module.exports = {
           payment_id
         ]
       );
+
+      // ✅ Insert into Payments table if payment_id exists
+      if (payment_id) {
+        await connection.query(
+          `INSERT INTO Payments (registration_id, amount, transaction_id, status) VALUES (?, ?, ?, ?)`,
+          [result.insertId, 0, payment_id, 'success']
+        );
+      }
 
       await connection.commit();
 
