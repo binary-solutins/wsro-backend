@@ -153,12 +153,12 @@ exports.checkEmailExists = async (req, res) => {
         // Query to check emails and team name existence
         const [existingRecords] = await db.query(
             `SELECT 
-                leader_email,
+                coach_mentor_email,
                 member_emails,
                 team_name
              FROM Registrations
              WHERE competition_id = ? AND (
-                leader_email IN (?) OR
+                coach_mentor_email IN (?) OR
                 team_name = ? OR
                 JSON_CONTAINS(member_emails, ?)
              )`,
@@ -176,8 +176,8 @@ exports.checkEmailExists = async (req, res) => {
 
             existingRecords.forEach(record => {
                 // Add leader email if it exists in the input emails array
-                if (emails.includes(record.leader_email)) {
-                    foundEmails.add(record.leader_email);
+                if (emails.includes(record.coach_mentor_email)) {
+                    foundEmails.add(record.coach_mentor_email);
                 }
 
                 // Add team name if it matches
@@ -213,9 +213,9 @@ exports.checkEmailExists = async (req, res) => {
 
     } catch (error) {
         console.error('Error checking email existence:', error);
-        res.status(500).json({ 
-            message: 'Server error', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Server error',
+            error: error.message
         });
     }
 };

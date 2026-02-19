@@ -1,9 +1,16 @@
 const Razorpay = require('razorpay');
 require('dotenv').config();
 
+const key_id = process.env.RAZORPAY_KEY_ID;
+const key_secret = process.env.RAZORPAY_KEY_SECRET;
+
+if (!key_id || !key_secret) {
+    console.error("❌ RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is missing in environment variables.");
+}
+
 const instance = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
+    key_id: key_id || "test_key_id", // Fallback to prevent crash on init, but payment will fail
+    key_secret: key_secret || "test_key_secret"
 });
 
 // Connectivity Check: Attempt to fetch payments (limit 1) to verify credentials
