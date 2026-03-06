@@ -45,7 +45,8 @@ exports.addRegion = async (req, res) => {
 
 exports.getRegistrations = async (req, res) => {
     try {
-        const [registrations] = await db.query(`
+        const { competition_id } = req.query;
+        let query = `
             SELECT 
                 r.*, 
                 c.name AS competition_name, 
@@ -62,7 +63,15 @@ exports.getRegistrations = async (req, res) => {
             FROM Registrations r
             JOIN Competitions c ON r.competition_id = c.id
             LEFT JOIN Regions reg ON r.region_id = reg.id
-        `);
+        `;
+
+        const queryParams = [];
+        if (competition_id) {
+            query += ' WHERE r.competition_id = ?';
+            queryParams.push(competition_id);
+        }
+
+        const [registrations] = await db.query(query, queryParams);
 
         if (!registrations.length) {
             return res.status(404).json({ message: 'No registrations found' });
@@ -124,10 +133,10 @@ exports.getEventRegistrationStats = async (req, res) => {
 
         // Verify event exists
         const [event] = await db.query(
-            'SELECT id, title FROM Events WHERE id = ?', 
+            'SELECT id, title FROM Events WHERE id = ?',
             [eventId]
         );
-        
+
         if (!event.length) {
             return res.status(404).json({ message: 'Event not found' });
         }
@@ -162,9 +171,9 @@ exports.getEventRegistrationStats = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching registration stats:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Server error',
-            error: error.message 
+            error: error.message
         });
     }
 };

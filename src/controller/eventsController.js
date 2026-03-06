@@ -11,11 +11,11 @@ exports.createEvent = async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { title, level } = req.body;
+        const { title, level, is_active } = req.body;
 
         const [result] = await db.query(
-            'INSERT INTO Events (title, level) VALUES (?, ?)',
-            [title, level]
+            'INSERT INTO Events (title, level, is_active) VALUES (?, ?, ?)',
+            [title, level, is_active !== undefined ? is_active : 1]
         );
 
         console.log('✅ Event created successfully:', { id: result.insertId, title });
@@ -63,7 +63,7 @@ exports.getEventsByLevel = async (req, res) => {
 
 exports.updateEvent = async (req, res) => {
     try {
-        const { id, title, level, event_date, venue } = req.body;
+        const { id, title, level, event_date, venue, is_active } = req.body;
 
         // Validate request
         const errors = validationResult(req);
@@ -91,6 +91,10 @@ exports.updateEvent = async (req, res) => {
         if (venue) {
             updateFields.push('venue = ?');
             values.push(venue);
+        }
+        if (is_active !== undefined) {
+            updateFields.push('is_active = ?');
+            values.push(is_active);
         }
 
         if (updateFields.length === 0) {
@@ -133,7 +137,7 @@ exports.updateEvent = async (req, res) => {
             console.log('✅ Competitions table updated with new date and/or venue:', { event_date, venue });
         }
 
-        console.log('✅ Event updated successfully:', { id, title, level, event_date, venue });
+        console.log('✅ Event updated successfully:', { id, title, level, event_date, venue, is_active });
         res.status(200).json({ message: 'Event updated successfully' });
     } catch (error) {
         console.error('❌ Error updating event:', error);
