@@ -15,7 +15,7 @@ exports.createOrder = async (req, res) => {
             amount: req.body.amount * 100, // amount in the smallest currency unit
             currency: "INR",
             receipt: crypto.randomBytes(16).toString("hex"),
-            payment_capture: 0
+            payment_capture: 1
         };
 
         console.log("⚙️ [Razorpay] Creating order with options:", JSON.stringify(options));
